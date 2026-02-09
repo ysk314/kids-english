@@ -161,7 +161,9 @@ function triggerPointFx(type, label) {
   pointFxLabel.textContent = label;
   void pointFx.offsetWidth;
   pointFx.classList.add("active");
-  playPointFxSound(type);
+  if (!isEmbed && (type === "student" || type === "teacher")) {
+    playPointFxSound(type);
+  }
 
   pointFxTimer = window.setTimeout(() => {
     pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect");
@@ -196,11 +198,11 @@ function triggerFxEventIfNeeded(incoming) {
     return;
   }
   if (fxEvent.kind === "correct") {
-    triggerPointFx("correct", "ぴんぽーん！");
+    triggerPointFx("correct", "◯");
     return;
   }
   if (fxEvent.kind === "incorrect") {
-    triggerPointFx("incorrect", "ぶっぶー！");
+    triggerPointFx("incorrect", "×");
   }
 }
 
