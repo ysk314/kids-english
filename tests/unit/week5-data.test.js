@@ -1,0 +1,46 @@
+import { describe, expect, it } from "vitest";
+import { FLOW_STEPS, LESSON_GOALS, WEEK5_SLIDES } from "../../src/week5/lessonData.js";
+
+describe("week5 lesson data", () => {
+  it("has exactly 49 slides including title, summary, break, and end slides", () => {
+    expect(WEEK5_SLIDES).toHaveLength(49);
+  });
+
+  it("contains all required phase blocks", () => {
+    const countByPrefix = (prefix) =>
+      WEEK5_SLIDES.filter((slide) => slide.id.startsWith(prefix)).length;
+
+    expect(countByPrefix("11_theme_title")).toBe(1);
+    expect(countByPrefix("12_jp_rhythm_")).toBe(5);
+    expect(countByPrefix("12_jp_break_work")).toBe(1);
+    expect(countByPrefix("13_jp_work_")).toBe(8);
+    expect(countByPrefix("13_jp_break_deep")).toBe(1);
+    expect(countByPrefix("14_jp_deep_step_")).toBe(4);
+    expect(countByPrefix("15_jp_deep_compare_")).toBe(4);
+    expect(countByPrefix("15_break_en_start")).toBe(1);
+    expect(countByPrefix("16_en_rhythm_")).toBe(5);
+    expect(countByPrefix("16_en_break_work")).toBe(1);
+    expect(countByPrefix("17_en_work_")).toBe(8);
+    expect(countByPrefix("17_en_break_deep")).toBe(1);
+    expect(countByPrefix("18_en_deep_step_")).toBe(4);
+    expect(countByPrefix("19_en_deep_compare_")).toBe(4);
+    expect(countByPrefix("20_end")).toBe(1);
+  });
+
+  it("has unique slide ids and hint payload", () => {
+    const ids = WEEK5_SLIDES.map((slide) => slide.id);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    WEEK5_SLIDES.forEach((slide) => {
+      expect(slide.hint.title.length).toBeGreaterThan(0);
+      expect(slide.hint.aim.length).toBeGreaterThan(0);
+      expect(slide.hint.script.length).toBeGreaterThan(0);
+      expect(slide.screenPath.endsWith(`${slide.id}.html`)).toBe(true);
+    });
+  });
+
+  it("keeps six flow steps and three lesson goals", () => {
+    expect(FLOW_STEPS).toHaveLength(6);
+    expect(LESSON_GOALS).toHaveLength(3);
+  });
+});

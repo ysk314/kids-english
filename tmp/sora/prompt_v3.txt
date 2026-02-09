@@ -1,0 +1,16 @@
+Use case: preschool English instruction clip
+Primary request: Same choreography and timing; simplify body language further so children can imitate instantly.
+Scene/background: neutral bright classroom, plain backdrop, no readable text
+Subject: one friendly adult teacher character with clear limb separation, front-facing stance, cheerful expression, non-realistic cartoon style inspired by the provided poster atmosphere
+Action: beat 1 (0.0-3.0s): arms extend horizontally left and right into a very wide shape, teacher says "Big" once; beat 2 (3.0-6.0s): hands move inward to a small gap at chest centerline, teacher says "Small" once; beat 3 (6.0-7.2s): relaxed smile and stillness
+Camera: locked camera, medium full-body framing, centered composition, no movement
+Lighting/mood: bright, clean, comforting
+Color palette: pastel pink background accents, coral-red costume accents, cyan-blue accents, black outlines
+Style/format: early-learning instructional animation, high pose readability, stable lines
+Timing/beats: one gesture per word, no overlap between words, movements on a clear two-count tempo
+Audio: two spoken words only, clear pronunciation, child-friendly tone, no music
+Dialogue:
+- Teacher: "Big"
+- Teacher: "Small"
+Constraints: no on-screen text, no logo marks, no copyrighted characters, no additional subjects
+Avoid: realism, cluttered classroom, perspective distortion, motion artifacts, lip-sync drift

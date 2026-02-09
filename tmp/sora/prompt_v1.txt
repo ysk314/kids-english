@@ -1,0 +1,16 @@
+Use case: preschool English instruction clip
+Primary request: Create a short instructional video for preschool education teaching the words "Big" and "Small" with body gestures.
+Scene/background: neutral bright classroom, clean walls and soft natural daylight, no posters or readable text
+Subject: one friendly adult teacher character, standing full body, facing camera, warm smile, energetic but calm, child-safe appearance inspired by the reference image style (bold outlines, cheerful, mascot-like)
+Action: beat 1 (0.0-2.6s): teacher spreads both arms wide to the sides and clearly says "Big" once; beat 2 (2.6-5.2s): teacher brings both hands close together in front of chest and clearly says "Small" once; beat 3 (5.2-6.2s): brief neutral hold while smiling
+Camera: locked-off medium full shot, straight-on eye level, no zoom, no pan
+Lighting/mood: bright, friendly, welcoming classroom mood
+Color palette: soft pink, coral red, sky blue, white, charcoal outlines
+Style/format: 2D cartoon-like educational style, simple shapes, clean edges, easy for children to read body movement
+Timing/beats: slow rhythmic movement, one gesture per word, clear pauses, easy to imitate by ages 3-6
+Audio: clear child-friendly voice synchronized to gestures, minimal room tone, no music
+Dialogue:
+- Teacher: "Big"
+- Teacher: "Small"
+Constraints: no text on screen, no logos, no copyrighted characters, no extra people, no props that distract from gestures
+Avoid: fast motion, motion blur, flicker, jitter, lip-sync mismatch, camera movement

@@ -1,0 +1,20 @@
+{
+  "name": "youji-eigo-mockup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "mockup:capture": "node ./mockup/scripts/generate-screenshots.mjs",
+    "week5:dev": "vite --host",
+    "week5:build": "vite build && mkdir -p dist/mockup && cp -R mockup/screens dist/mockup/ && cp -R mockup/assets dist/mockup/ && cp mockup/shared.css dist/mockup/",
+    "week5:preview": "vite preview",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "playwright test -c ./playwright.week5.config.mjs",
+    "test:week5": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0",
+    "vite": "^5.4.14",
+    "vitest": "^2.1.8"
+  }
+}

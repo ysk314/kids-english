@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>幼児英語アプリ モック - カリキュラムマップ</title>
+    <link rel="stylesheet" href="../shared.css">
+    <script src="../data/curriculum.js" defer></script>
+    <script src="../shared.js" defer></script>
+    <script defer>
+      window.addEventListener("DOMContentLoaded", function () {
+        MockupUI.renderTimeline("#timeline-1", 1, 12);
+        MockupUI.renderTimeline("#timeline-2", 13, 24);
+        MockupUI.renderTimeline("#timeline-3", 25, 39);
+      });
+    </script>
+  </head>
+  <body>
+    <main class="screen-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo-box">塾</div>
+          <div>
+            <h1>カリキュラムマップ</h1>
+            <p>39週を「日本語理解 → 英語転移 → なりきり統合」で設計</p>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="chip">表示: 週1〜39</span>
+          <span class="chip hot">4週ごとに なりきり演出</span>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>表示ルール（表側）</h2>
+        <div class="stage-bar">
+          <span class="stage-pill">各パート冒頭90秒: 導入リズム（JP90 / EN95）</span>
+          <span class="stage-pill active">日本語パート: 日本語のみ表示</span>
+          <span class="stage-pill active">英語パート: 英語のみ表示</span>
+          <span class="stage-pill">大画面は問題・説明のみ表示</span>
+          <span class="stage-pill">講師は1問ごとに前へ/次へで進行</span>
+          <span class="stage-pill">毎週ミッションはMVPで非表示</span>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <h2>第1〜12週（分類・比較・描写）</h2>
+        <div id="timeline-1" class="timeline"></div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <h2>第13〜24週（動詞・接続語・因果）</h2>
+        <div id="timeline-2" class="timeline"></div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <h2>第25〜39週（言い換え・指示語・助動詞・並び替え）</h2>
+        <div id="timeline-3" class="timeline"></div>
+      </section>
+    </main>
+  </body>
+</html>

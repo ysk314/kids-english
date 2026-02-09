@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>幼児英語アプリ モック - なりきり演出</title>
+    <link rel="stylesheet" href="../shared.css">
+  </head>
+  <body>
+    <main class="screen-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo-box">塾</div>
+          <div>
+            <h1>なりきり演出画面</h1>
+            <p>第12週 / 名詞・形容詞ユニット統合 / 専用ステージUI</p>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="chip hot">Role-play Mode</span>
+          <span class="chip">Class: さくら組</span>
+          <span class="chip">Scene 2 / 3</span>
+        </div>
+      </header>
+
+      <section class="panel" style="margin-bottom:14px">
+        <div class="stage-bar">
+          <span class="stage-pill">導入</span>
+          <span class="stage-pill active">配役 + セリフ練習</span>
+          <span class="stage-pill">本番発表</span>
+        </div>
+        <div class="global-clock">
+          <span class="clock-label">全体45分タイマー</span>
+          <div class="timer">39:10 / 45:00</div>
+        </div>
+      </section>
+
+      <section class="grid-2">
+        <article class="roleplay-stage">
+          <h2 style="margin:0 0 8px;font-family:'Yusei Magic',sans-serif">お題: ふしぎなフルーツショップ</h2>
+          <p style="margin:0;font-size:19px;font-weight:700">カードを3枚引いて、店員とお客さんで会話を作ろう。</p>
+
+          <div class="script-steps">
+            <div class="script-step"><strong>Step 1:</strong> 日本語で場面確認「だれが / なにを / どうする」</div>
+            <div class="script-step"><strong>Step 2:</strong> 英語で言い換え「I want a shiny apple.」</div>
+            <div class="script-step"><strong>Step 3:</strong> 追加ミッション「理由を1つつける（because ...）」</div>
+          </div>
+
+          <div class="card-grid" style="margin-top:16px">
+            <div class="card"><div class="emoji">🍎</div><div class="text">apple</div></div>
+            <div class="card"><div class="emoji">✨</div><div class="text">shiny</div></div>
+            <div class="card"><div class="emoji">😋</div><div class="text">hungry</div></div>
+            <div class="card"><div class="emoji">🛍️</div><div class="text">shop</div></div>
+          </div>
+        </article>
+
+        <aside class="panel" style="margin:0">
+          <h2>配役</h2>
+          <div class="roleplay-cast">
+            <div class="cast-card">
+              <h4>店員</h4>
+              <p style="margin:0">Mio</p>
+            </div>
+            <div class="cast-card">
+              <h4>お客さん</h4>
+              <p style="margin:0">Aoi</p>
+            </div>
+            <div class="cast-card">
+              <h4>サポート</h4>
+              <p style="margin:0">Riku</p>
+            </div>
+          </div>
+
+          <h2 style="margin-top:14px">講師コントロール</h2>
+          <div class="btn-row">
+            <button class="btn point-student">生徒にポイント +1</button>
+            <button class="btn point-teacher">講師にポイント +1</button>
+            <button class="btn soft">前へ</button>
+            <button class="btn accent">次へ</button>
+          </div>
+
+          <div class="mirror-preview">
+            <h5>大画面プレビュー</h5>
+            <p style="margin:0;font-size:18px">配役・お題・セリフだけ表示</p>
+            <p style="margin:8px 0 0">得点操作UIや進行ボタンは非表示</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

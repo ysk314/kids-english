@@ -1,0 +1,16 @@
+Use case: preschool English instruction clip
+Primary request: Same shot and setup; increase gesture clarity and pacing control for very young children.
+Scene/background: neutral bright classroom, clean walls and soft natural daylight, no posters or readable text
+Subject: one friendly adult teacher character, standing full body, facing camera, warm smile, child-safe mascot-like design inspired by the reference vibe
+Action: beat 1 (0.0-3.0s): teacher slowly spreads both arms to maximum width and says "Big" exactly once at the widest point; beat 2 (3.0-6.0s): teacher slowly brings both hands close together and says "Small" exactly once at the closest point; beat 3 (6.0-7.0s): hold final pose briefly
+Camera: locked-off medium full shot, eye-level, fixed frame
+Lighting/mood: bright and gentle
+Color palette: soft pink, coral red, sky blue, white, charcoal outlines
+Style/format: simple educational cartoon style focused on clear silhouette readability
+Timing/beats: exaggerated slow rhythm, one gesture per word, one second of visual hold after each spoken word
+Audio: clear single speaker, no background music, no additional words
+Dialogue:
+- Teacher: "Big"
+- Teacher: "Small"
+Constraints: keep same composition and camera, no text on screen, no logos, no extra actions
+Avoid: fast transitions, extra gestures, hand occlusion of face, jitter, flicker
