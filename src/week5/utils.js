@@ -22,3 +22,10 @@ export function formatLessonTimer(elapsedSeconds) {
 export function nowMs() {
   return Date.now();
 }
+
+export function resolveAppPath(pathname) {
+  const base = import.meta.env.BASE_URL || "/";
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  return `${normalizedBase}${normalizedPath}`;
+}

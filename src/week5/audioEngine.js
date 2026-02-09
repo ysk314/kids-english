@@ -1,5 +1,12 @@
 function noOp() {}
 
+function resolveAssetUrl(pathname) {
+  const base = import.meta.env.BASE_URL || "/";
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  return new URL(`${normalizedBase}${normalizedPath}`, window.location.origin).toString();
+}
+
 export class Week5AudioEngine {
   constructor() {
     this.context = null;
@@ -305,10 +312,10 @@ export class Week5AudioEngine {
       return;
     }
 
-    this.correctAudio = new Audio("/mockup/assets/audio/correct.mp3");
+    this.correctAudio = new Audio(resolveAssetUrl("mockup/assets/audio/correct.mp3"));
     this.correctAudio.preload = "auto";
 
-    this.wrongAudio = new Audio("/mockup/assets/audio/wrong.mp3");
+    this.wrongAudio = new Audio(resolveAssetUrl("mockup/assets/audio/wrong.mp3"));
     this.wrongAudio.preload = "auto";
   }
 

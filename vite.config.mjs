@@ -5,13 +5,15 @@ import { dirname, resolve } from "node:path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === "gh-pages" ? "/kids-english/" : "/",
   build: {
     rollupOptions: {
       input: {
+        index: resolve(__dirname, "index.html"),
         runner: resolve(__dirname, "week5-runner.html"),
         bigscreen: resolve(__dirname, "week5-big-screen.html")
       }
     }
   }
-});
+}));

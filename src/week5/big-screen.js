@@ -23,11 +23,8 @@ let state = {
 };
 let pointFxTimer = null;
 let fxAudio = null;
-let hydratedPoints = false;
-let lastPoints = {
-  studentPoints: 0,
-  teacherPoints: 0
-};
+let hydratedFx = false;
+let lastFxId = "";
 
 function render() {
   const index = Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0));
@@ -125,27 +122,31 @@ function playPointFxSound(type) {
     return;
   }
   const now = context.currentTime;
-  const notes = type === "student" ? [880, 1175, 1568] : [587, 784, 1047];
+  let notes = [880, 1175, 1568];
+  if (type === "teacher") {
+    notes = [587, 784, 1047];
+  } else if (type === "correct") {
+    notes = [988, 1318, 1760];
+  } else if (type === "incorrect") {
+    notes = [220, 196, 174];
+  }
+
   notes.forEach((freq, i) => {
     const osc = context.createOscillator();
     const gain = context.createGain();
-    osc.type = "triangle";
+    osc.type = type === "incorrect" ? "sawtooth" : "triangle";
     osc.frequency.setValueAtTime(freq, now + i * 0.06);
     gain.gain.setValueAtTime(0.0001, now + i * 0.06);
-    gain.gain.exponentialRampToValueAtTime(0.07, now + i * 0.06 + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + 0.14);
+    gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.06 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + 0.16);
     osc.connect(gain);
     gain.connect(context.destination);
     osc.start(now + i * 0.06);
-    osc.stop(now + i * 0.06 + 0.16);
+    osc.stop(now + i * 0.06 + 0.18);
   });
 }
 
-function triggerPointFx(type, delta) {
-  if (isEmbed) {
-    return;
-  }
-
+function triggerPointFx(type, label) {
   if (!pointFx || !pointFxLabel) {
     return;
   }
@@ -155,48 +156,52 @@ function triggerPointFx(type, delta) {
     pointFxTimer = null;
   }
 
-  pointFx.classList.remove("student", "teacher", "active");
+  pointFx.classList.remove("student", "teacher", "correct", "incorrect", "active");
   pointFx.classList.add(type);
-  pointFxLabel.textContent = `${type === "student" ? "みんな" : "むつみせんせい"} +${delta}`;
+  pointFxLabel.textContent = label;
   void pointFx.offsetWidth;
   pointFx.classList.add("active");
   playPointFxSound(type);
 
   pointFxTimer = window.setTimeout(() => {
-    pointFx.classList.remove("active", "student", "teacher");
+    pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect");
     pointFxTimer = null;
   }, 700);
 }
 
-function triggerPointFxIfNeeded(incoming) {
-  if (isEmbed) {
-    lastPoints = {
-      studentPoints: incoming.studentPoints ?? 0,
-      teacherPoints: incoming.teacherPoints ?? 0
-    };
-    hydratedPoints = true;
+function triggerFxEventIfNeeded(incoming) {
+  const fxEvent = incoming?.fxEvent;
+  if (!fxEvent || typeof fxEvent !== "object" || !fxEvent.id) {
     return;
   }
 
-  if (!hydratedPoints) {
-    lastPoints = {
-      studentPoints: incoming.studentPoints ?? 0,
-      teacherPoints: incoming.teacherPoints ?? 0
-    };
-    hydratedPoints = true;
+  if (!hydratedFx) {
+    lastFxId = fxEvent.id;
+    hydratedFx = true;
     return;
   }
 
-  if ((incoming.studentPoints ?? 0) > (lastPoints.studentPoints ?? 0)) {
-    triggerPointFx("student", (incoming.studentPoints ?? 0) - (lastPoints.studentPoints ?? 0));
-  } else if ((incoming.teacherPoints ?? 0) > (lastPoints.teacherPoints ?? 0)) {
-    triggerPointFx("teacher", (incoming.teacherPoints ?? 0) - (lastPoints.teacherPoints ?? 0));
+  if (fxEvent.id === lastFxId) {
+    return;
   }
 
-  lastPoints = {
-    studentPoints: incoming.studentPoints ?? 0,
-    teacherPoints: incoming.teacherPoints ?? 0
-  };
+  lastFxId = fxEvent.id;
+
+  if (fxEvent.kind === "student") {
+    triggerPointFx("student", "みんな +1");
+    return;
+  }
+  if (fxEvent.kind === "teacher") {
+    triggerPointFx("teacher", "むつみせんせい +1");
+    return;
+  }
+  if (fxEvent.kind === "correct") {
+    triggerPointFx("correct", "ぴんぽーん！");
+    return;
+  }
+  if (fxEvent.kind === "incorrect") {
+    triggerPointFx("incorrect", "ぶっぶー！");
+  }
 }
 
 function applyState(incoming) {
@@ -212,7 +217,7 @@ function applyState(incoming) {
     ...incoming
   };
 
-  triggerPointFxIfNeeded(state);
+  triggerFxEventIfNeeded(state);
   render();
 }
 

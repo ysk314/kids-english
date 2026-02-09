@@ -8,7 +8,7 @@ import {
 } from "./lessonData.js";
 import { Week5AudioEngine } from "./audioEngine.js";
 import { SessionBus, defaultSessionId } from "./sessionBus.js";
-import { LESSON_DURATION_SECONDS, clamp, formatLessonTimer, nowMs } from "./utils.js";
+import { LESSON_DURATION_SECONDS, clamp, formatLessonTimer, nowMs, resolveAppPath } from "./utils.js";
 
 const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("session") || defaultSessionId();
@@ -138,10 +138,18 @@ function updatePreview(slide) {
 }
 
 function initializePreviewFrame() {
-  const url = `/week5-big-screen.html?session=${encodeURIComponent(sessionId)}&embed=1`;
+  const baseUrl = resolveAppPath("week5-big-screen.html");
+  const url = `${baseUrl}?session=${encodeURIComponent(sessionId)}&embed=1`;
   if (elements.previewFrame.getAttribute("src") !== url) {
     elements.previewFrame.setAttribute("src", url);
   }
+}
+
+function makeFxEvent(kind) {
+  return {
+    id: `${nowMs()}-${Math.random().toString(16).slice(2, 8)}`,
+    kind
+  };
 }
 
 function fitPreviewScale() {
@@ -307,19 +315,26 @@ async function setupControls() {
   elements.studentPointButton.addEventListener("click", async () => {
     await ensureAudioReady();
     audio.playPoint("student");
-    setState({ studentPoints: state.studentPoints + 1 });
+    setState({
+      studentPoints: state.studentPoints + 1,
+      fxEvent: makeFxEvent("student")
+    });
   });
 
   elements.teacherPointButton.addEventListener("click", async () => {
     await ensureAudioReady();
     audio.playPoint("teacher");
-    setState({ teacherPoints: state.teacherPoints + 1 });
+    setState({
+      teacherPoints: state.teacherPoints + 1,
+      fxEvent: makeFxEvent("teacher")
+    });
   });
 
   if (elements.correctButton) {
     elements.correctButton.addEventListener("click", async () => {
       await ensureAudioReady();
       audio.playCorrect();
+      setState({ fxEvent: makeFxEvent("correct") });
     });
   }
 
@@ -327,6 +342,7 @@ async function setupControls() {
     elements.incorrectButton.addEventListener("click", async () => {
       await ensureAudioReady();
       audio.playIncorrect();
+      setState({ fxEvent: makeFxEvent("incorrect") });
     });
   }
 
@@ -345,7 +361,7 @@ async function setupControls() {
   });
 
   elements.openBigButton.addEventListener("click", () => {
-    const url = `/week5-big-screen.html?session=${encodeURIComponent(sessionId)}`;
+    const url = `${resolveAppPath("week5-big-screen.html")}?session=${encodeURIComponent(sessionId)}`;
     window.open(url, "week5-bigscreen", "noopener,noreferrer");
   });
 

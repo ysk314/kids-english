@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>幼児英語アプリ モック - 教室設定</title>
+    <link rel="stylesheet" href="../shared.css">
+  </head>
+  <body>
+    <main class="screen-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo-box">塾</div>
+          <div>
+            <h1>教室設定</h1>
+            <p>ミラーリング・表示ルール・MVP機能フラグ</p>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="chip hot">教室Aプリセット</span>
+          <span class="chip">最終更新: 2026-02-08</span>
+        </div>
+      </header>
+
+      <section class="grid-2">
+        <article class="panel">
+          <h2>ミラーリング設定</h2>
+          <table class="table">
+            <tbody>
+              <tr><th>出力先</th><td>AirPlay - Classroom Display 01</td></tr>
+              <tr><th>解像度</th><td>1920 x 1080 (16:9)</td></tr>
+              <tr><th>表示モード</th><td>児童向けプレゼンのみ（講師UI非表示）</td></tr>
+              <tr><th>言語表示ルール</th><td>日本語パート=日本語のみ / 英語パート=英語のみ</td></tr>
+              <tr><th>導入アクティビティ</th><td>日本語導入BPM90 / 英語導入BPM95（同一動作）</td></tr>
+              <tr><th>表示対象</th><td>問題・説明のみ（児童名・評価・正解・ポイント操作は非表示）</td></tr>
+              <tr><th>遅延最適化</th><td>低アニメーションモード ON</td></tr>
+            </tbody>
+          </table>
+
+          <h3 style="margin-top:14px">視認性設定</h3>
+          <div class="status-grid">
+            <div class="status-item"><strong>フォントサイズ</strong><p style="margin:6px 0 0">特大（標準比 145%）</p></div>
+            <div class="status-item"><strong>情報量</strong><p style="margin:6px 0 0">最小（1画面1課題）</p></div>
+            <div class="status-item"><strong>配色補助</strong><p style="margin:6px 0 0">色覚配慮モード ON</p></div>
+            <div class="status-item"><strong>ロゴ/キャラ素材</strong><p style="margin:6px 0 0">利用可能素材のみ本番反映</p></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>機能フラグ（MVP）</h2>
+          <table class="table">
+            <thead>
+              <tr><th>機能</th><th>状態</th><th>備考</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>毎週ミッション</td>
+                <td><span class="badge gray">OFF（固定）</span></td>
+                <td>表側UIから非表示</td>
+              </tr>
+              <tr>
+                <td>進捗トラッカー画面</td>
+                <td><span class="badge gray">OFF（初期非搭載）</span></td>
+                <td>初期リリース対象外</td>
+              </tr>
+              <tr>
+                <td>なりきり専用演出</td>
+                <td><span class="badge special">ON</span></td>
+                <td>4週ごとの統合回で利用</td>
+              </tr>
+              <tr>
+                <td>AI画像生成（第11週）</td>
+                <td><span class="badge jp">ON（限定）</span></td>
+                <td>授業内利用のみ</td>
+              </tr>
+              <tr>
+                <td>導入リズムテンプレート</td>
+                <td><span class="badge en">ON</span></td>
+                <td>各パート冒頭90秒で実行</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout" style="margin-top:14px">授業中の必須操作は「生徒+1」「講師+1」「前へ」「次へ」の4ボタン。</div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

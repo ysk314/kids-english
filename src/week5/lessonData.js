@@ -1,4 +1,6 @@
-const screenPath = (id) => `/mockup/screens/${id}.html`;
+import { resolveAppPath } from "./utils.js";
+
+const screenPath = (id) => resolveAppPath(`mockup/screens/${id}.html`);
 
 const RHYTHM_PAIRS_JP = [
   {

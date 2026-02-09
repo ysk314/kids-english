@@ -368,9 +368,19 @@ body.embed-bigscreen .fullscreen-btn {
   background: radial-gradient(circle, rgba(116, 149, 255, 0.5), rgba(116, 149, 255, 0) 60%);
 }
 
+.bigscreen-point-fx.correct::before {
+  background: radial-gradient(circle, rgba(77, 203, 136, 0.55), rgba(77, 203, 136, 0) 60%);
+}
+
+.bigscreen-point-fx.incorrect::before {
+  background: radial-gradient(circle, rgba(255, 101, 116, 0.55), rgba(255, 101, 116, 0) 60%);
+}
+
 .bigscreen-point-fx-label {
   position: relative;
   z-index: 1;
+  width: 100%;
+  text-align: center;
   font-size: 140px;
   line-height: 1;
   font-weight: 800;
