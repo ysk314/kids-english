@@ -158,6 +158,7 @@ function triggerPointFx(type, label) {
 
   pointFx.classList.remove("student", "teacher", "correct", "incorrect", "active");
   pointFx.classList.add(type);
+  pointFx.classList.toggle("symbol", type === "correct" || type === "incorrect");
   pointFxLabel.textContent = label;
   void pointFx.offsetWidth;
   pointFx.classList.add("active");
@@ -166,7 +167,7 @@ function triggerPointFx(type, label) {
   }
 
   pointFxTimer = window.setTimeout(() => {
-    pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect");
+    pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect", "symbol");
     pointFxTimer = null;
   }, 700);
 }

@@ -389,6 +389,11 @@ body.embed-bigscreen .fullscreen-btn {
   transform: scale(0.75);
 }
 
+.bigscreen-point-fx.symbol .bigscreen-point-fx-label {
+  font-size: 260px;
+  font-weight: 900;
+}
+
 .bigscreen-point-fx.active {
   animation: point-flash 680ms ease-out forwards;
 }
