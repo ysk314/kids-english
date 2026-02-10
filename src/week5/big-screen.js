@@ -13,6 +13,8 @@ const mirrorStatus = document.querySelector("[data-testid='bigscreen-status']");
 const pointHeader = document.querySelector("[data-testid='bigscreen-points']");
 const pointFx = document.querySelector("[data-testid='bigscreen-point-fx']");
 const pointFxLabel = document.querySelector("[data-testid='bigscreen-point-fx-label']");
+const endFx = document.querySelector("[data-testid='bigscreen-end-fx']");
+const endFxLabel = document.querySelector("[data-testid='bigscreen-end-fx-label']");
 const fullscreenButton = document.querySelector("[data-testid='fullscreen-btn']");
 
 let state = {
@@ -22,9 +24,22 @@ let state = {
   updatedAt: 0
 };
 let pointFxTimer = null;
+let endFxTimer = null;
 let fxAudio = null;
+let endRollAudio = null;
+let endCymbalAudio = null;
+let endAudioTimer = null;
+let endIntroTimer = null;
 let hydratedFx = false;
 let lastFxId = "";
+let lastSlideId = "";
+
+function resolveAssetUrl(pathname) {
+  const base = import.meta.env.BASE_URL || "/";
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  return new URL(`${normalizedBase}${normalizedPath}`, window.location.origin).toString();
+}
 
 function render() {
   const index = Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0));
@@ -42,6 +57,14 @@ function render() {
   mirrorStatus.textContent = "Mirror Connected";
   mirrorStatus.classList.add("hot");
   pointHeader.textContent = `みんな ${state.studentPoints ?? 0} / むつみ先生 ${state.teacherPoints ?? 0}`;
+
+  const previousSlideId = lastSlideId;
+  lastSlideId = slide.id;
+  if (slide.kind === "end" && previousSlideId && previousSlideId !== slide.id) {
+    triggerEndFx();
+  } else if (slide.kind !== "end") {
+    clearEndFx();
+  }
 }
 
 async function toggleFullscreen() {
@@ -122,19 +145,12 @@ function playPointFxSound(type) {
     return;
   }
   const now = context.currentTime;
-  let notes = [880, 1175, 1568];
-  if (type === "teacher") {
-    notes = [587, 784, 1047];
-  } else if (type === "correct") {
-    notes = [988, 1318, 1760];
-  } else if (type === "incorrect") {
-    notes = [220, 196, 174];
-  }
+  const notes = type === "teacher" ? [587, 784, 1047] : [880, 1175, 1568];
 
   notes.forEach((freq, i) => {
     const osc = context.createOscillator();
     const gain = context.createGain();
-    osc.type = type === "incorrect" ? "sawtooth" : "triangle";
+    osc.type = "triangle";
     osc.frequency.setValueAtTime(freq, now + i * 0.06);
     gain.gain.setValueAtTime(0.0001, now + i * 0.06);
     gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.06 + 0.01);
@@ -144,6 +160,51 @@ function playPointFxSound(type) {
     osc.start(now + i * 0.06);
     osc.stop(now + i * 0.06 + 0.18);
   });
+}
+
+function playEndFanfare() {
+  if (isEmbed) {
+    return;
+  }
+  if (!endRollAudio || !endCymbalAudio) {
+    endRollAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_drum_roll.mp3"));
+    endRollAudio.preload = "auto";
+    endCymbalAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_cymbal.mp3"));
+    endCymbalAudio.preload = "auto";
+  }
+
+  if (endAudioTimer) {
+    window.clearTimeout(endAudioTimer);
+    endAudioTimer = null;
+  }
+
+  try {
+    endRollAudio.currentTime = 0;
+    const rollPromise = endRollAudio.play();
+    if (rollPromise && typeof rollPromise.catch === "function") {
+      rollPromise.catch(() => {});
+    }
+  } catch {
+    // no-op
+  }
+
+  endAudioTimer = window.setTimeout(() => {
+    if (endRollAudio) {
+      endRollAudio.pause();
+    }
+    if (endCymbalAudio) {
+      try {
+        endCymbalAudio.currentTime = 0;
+        const cymbalPromise = endCymbalAudio.play();
+        if (cymbalPromise && typeof cymbalPromise.catch === "function") {
+          cymbalPromise.catch(() => {});
+        }
+      } catch {
+        // no-op
+      }
+    }
+    endAudioTimer = null;
+  }, 1300);
 }
 
 function triggerPointFx(type, label) {
@@ -170,6 +231,58 @@ function triggerPointFx(type, label) {
     pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect", "symbol");
     pointFxTimer = null;
   }, 700);
+}
+
+function triggerEndFx() {
+  if (!endFx || !endFxLabel) {
+    return;
+  }
+  if (endFxTimer) {
+    window.clearTimeout(endFxTimer);
+    endFxTimer = null;
+  }
+
+  endFxLabel.innerHTML = `けっか はっぴょう！<br>みんな ${state.studentPoints ?? 0} てん<br>むつみせんせい ${state.teacherPoints ?? 0} てん`;
+  endFx.classList.remove("burst");
+  void endFx.offsetWidth;
+  endFx.classList.add("show", "burst");
+
+  endFxTimer = window.setTimeout(() => {
+    endFx.classList.remove("burst");
+    endFxTimer = null;
+  }, 2600);
+
+  if (endIntroTimer) {
+    window.clearTimeout(endIntroTimer);
+    endIntroTimer = null;
+  }
+
+  endIntroTimer = window.setTimeout(() => {
+    playEndFanfare();
+    endIntroTimer = null;
+  }, 500);
+}
+
+function clearEndFx() {
+  if (!endFx) {
+    return;
+  }
+  endFx.classList.remove("show", "burst");
+  if (endFxTimer) {
+    window.clearTimeout(endFxTimer);
+    endFxTimer = null;
+  }
+  if (endAudioTimer) {
+    window.clearTimeout(endAudioTimer);
+    endAudioTimer = null;
+  }
+  if (endIntroTimer) {
+    window.clearTimeout(endIntroTimer);
+    endIntroTimer = null;
+  }
+  if (endRollAudio) {
+    endRollAudio.pause();
+  }
 }
 
 function triggerFxEventIfNeeded(incoming) {
@@ -255,6 +368,22 @@ if (!isEmbed) {
 }
 
 window.addEventListener("beforeunload", () => {
+  if (endAudioTimer) {
+    window.clearTimeout(endAudioTimer);
+    endAudioTimer = null;
+  }
+  if (endIntroTimer) {
+    window.clearTimeout(endIntroTimer);
+    endIntroTimer = null;
+  }
+  if (endRollAudio) {
+    endRollAudio.pause();
+    endRollAudio = null;
+  }
+  if (endCymbalAudio) {
+    endCymbalAudio.pause();
+    endCymbalAudio = null;
+  }
   if (fxAudio) {
     fxAudio.close().catch(() => {});
     fxAudio = null;

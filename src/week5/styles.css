@@ -70,6 +70,37 @@ body.week5-runner-page {
   white-space: nowrap;
 }
 
+.timer-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-icon-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timer-icon-btn {
+  border: 0;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: #2f3457;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.timer-icon-btn.active {
+  background: #ff4f7d;
+}
+
 .bgm-toggle {
   border: 0;
   cursor: pointer;
@@ -195,24 +226,69 @@ body.week5-runner-page {
   font-size: 17px;
 }
 
-.control-stack {
+.control-groups {
   display: grid;
+  gap: 8px;
+}
+
+.control-group {
+  display: grid;
+  gap: 4px;
+}
+
+.control-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #4f556f;
+}
+
+.control-row {
+  display: grid;
+}
+
+.control-row.row-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.control-row.row-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
-.control-stack .btn {
+.control-row .btn {
   padding: 8px 6px;
   font-size: 12px;
   border-radius: 10px;
   white-space: nowrap;
+  min-height: 36px;
 }
 
-.control-stack .btn.utility {
+.btn.btn-open {
+  background: #455d8f;
+}
+
+.btn.btn-sound {
   background: #2f3457;
 }
 
-.control-stack .btn.hot {
+.btn.btn-sound.hot {
+  background: #0f8f87;
+}
+
+.btn.btn-correct {
+  background: #2ba65f;
+}
+
+.btn.btn-incorrect {
+  background: #da4262;
+}
+
+.btn.btn-reset {
+  background: #6c7391;
+}
+
+.control-row .btn.hot {
   background: #ff4f7d;
 }
 
@@ -390,8 +466,9 @@ body.embed-bigscreen .fullscreen-btn {
 }
 
 .bigscreen-point-fx.symbol .bigscreen-point-fx-label {
-  font-size: 260px;
+  font-size: clamp(420px, 46vw, 760px);
   font-weight: 900;
+  line-height: 0.9;
 }
 
 .bigscreen-point-fx.active {
@@ -426,6 +503,93 @@ body.embed-bigscreen .fullscreen-btn {
   100% {
     opacity: 0;
     transform: scale(1.25);
+  }
+}
+
+.bigscreen-end-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.bigscreen-end-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 213, 87, 0.7), transparent 18%),
+    radial-gradient(circle at 80% 14%, rgba(130, 210, 255, 0.7), transparent 18%),
+    radial-gradient(circle at 30% 76%, rgba(255, 123, 150, 0.75), transparent 20%),
+    radial-gradient(circle at 74% 80%, rgba(123, 255, 178, 0.62), transparent 20%);
+}
+
+.bigscreen-end-fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255, 121, 165, 0.9) 2px, transparent 2px),
+    radial-gradient(circle, rgba(118, 169, 255, 0.9) 2px, transparent 2px);
+  background-size: 22px 22px, 34px 34px, 28px 28px;
+  background-position: 0 0, 10px 14px, 16px 6px;
+}
+
+.bigscreen-end-fx-label {
+  position: relative;
+  z-index: 1;
+  width: min(90vw, 1320px);
+  text-align: center;
+  font-size: clamp(52px, 5.4vw, 94px);
+  line-height: 1.18;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 10px 24px rgba(9, 13, 34, 0.45);
+  background: rgba(27, 35, 72, 0.52);
+  border: 4px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  padding: 20px 24px;
+  transform: scale(0.8);
+}
+
+.bigscreen-end-fx.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bigscreen-end-fx.burst::after {
+  animation: confetti-fall 2400ms linear forwards;
+}
+
+.bigscreen-end-fx.burst .bigscreen-end-fx-label {
+  animation: end-pop 2400ms ease-out forwards;
+}
+
+@keyframes end-pop {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.72);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-18px);
+  }
+  100% {
+    transform: translateY(42px);
   }
 }
 

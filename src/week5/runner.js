@@ -22,7 +22,9 @@ const fallbackState = {
   studentPoints: 0,
   teacherPoints: 0,
   bgmEnabled: true,
-  startedAt: nowMs(),
+  timerRunning: true,
+  timerOffsetSec: 0,
+  timerStartedAt: nowMs(),
   updatedAt: nowMs()
 };
 
@@ -37,11 +39,66 @@ if (initialSlideId) {
 }
 state.slideIndex = clamp(state.slideIndex, 0, WEEK5_SLIDES.length - 1);
 
+function normalizeTimerState(rawState) {
+  const normalized = { ...rawState };
+  const now = nowMs();
+
+  if (
+    typeof normalized.timerRunning !== "boolean" ||
+    typeof normalized.timerOffsetSec !== "number" ||
+    !(normalized.timerStartedAt === null || typeof normalized.timerStartedAt === "number")
+  ) {
+    if (typeof normalized.startedAt === "number") {
+      const migratedElapsed = clamp(
+        Math.floor((now - normalized.startedAt) / 1000),
+        0,
+        LESSON_DURATION_SECONDS
+      );
+      normalized.timerOffsetSec = migratedElapsed;
+      normalized.timerRunning = migratedElapsed < LESSON_DURATION_SECONDS;
+      normalized.timerStartedAt = normalized.timerRunning ? now : null;
+    } else {
+      normalized.timerRunning = true;
+      normalized.timerOffsetSec = 0;
+      normalized.timerStartedAt = now;
+    }
+  }
+
+  normalized.timerOffsetSec = clamp(
+    Number.isFinite(normalized.timerOffsetSec) ? Math.floor(normalized.timerOffsetSec) : 0,
+    0,
+    LESSON_DURATION_SECONDS
+  );
+
+  if (normalized.timerRunning) {
+    if (!Number.isFinite(normalized.timerStartedAt)) {
+      normalized.timerStartedAt = now;
+    }
+    if (normalized.timerOffsetSec >= LESSON_DURATION_SECONDS) {
+      normalized.timerRunning = false;
+      normalized.timerStartedAt = null;
+    }
+  } else {
+    normalized.timerStartedAt = null;
+  }
+
+  if ("startedAt" in normalized) {
+    delete normalized.startedAt;
+  }
+
+  return normalized;
+}
+
+state = normalizeTimerState(state);
+
 const elements = {
   scaleRoot: document.querySelector("[data-role='runner-scale']"),
   mirrorChip: document.querySelector("[data-role='mirror-chip']"),
   slideCounter: document.querySelector("[data-testid='slide-counter']"),
   timer: document.querySelector("[data-testid='lesson-timer']"),
+  timerStartButton: document.querySelector("[data-testid='timer-start-btn']"),
+  timerStopButton: document.querySelector("[data-testid='timer-stop-btn']"),
+  timerResetButton: document.querySelector("[data-testid='timer-reset-btn']"),
   flowSteps: document.querySelector("[data-role='flow-steps']"),
   goals: document.querySelector("[data-role='goal-grid']"),
   previewFrame: document.querySelector("[data-testid='stage-preview-frame']"),
@@ -60,6 +117,7 @@ const elements = {
   teacherPointButton: document.querySelector("[data-testid='teacher-point-btn']"),
   correctButton: document.querySelector("[data-testid='correct-btn']"),
   incorrectButton: document.querySelector("[data-testid='incorrect-btn']"),
+  resetPointsButton: document.querySelector("[data-testid='reset-points-btn']"),
   openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
   soundButton: document.querySelector("[data-testid='sound-btn']")
 };
@@ -104,7 +162,11 @@ function currentSlide() {
 }
 
 function lessonElapsedSeconds() {
-  return clamp(Math.floor((nowMs() - state.startedAt) / 1000), 0, LESSON_DURATION_SECONDS);
+  const runningElapsed =
+    state.timerRunning && state.timerStartedAt
+      ? Math.floor((nowMs() - state.timerStartedAt) / 1000)
+      : 0;
+  return clamp(state.timerOffsetSec + runningElapsed, 0, LESSON_DURATION_SECONDS);
 }
 
 function updateFlowHighlight(slide) {
@@ -174,6 +236,16 @@ function updateTimer() {
   elements.timer.textContent = formatLessonTimer(lessonElapsedSeconds());
 }
 
+function updateTimerButtons() {
+  if (!elements.timerStartButton || !elements.timerStopButton || !elements.timerResetButton) {
+    return;
+  }
+
+  elements.timerStartButton.classList.toggle("active", state.timerRunning);
+  elements.timerStopButton.classList.toggle("active", !state.timerRunning);
+  elements.timerResetButton.classList.remove("active");
+}
+
 function updateScore() {
   if (elements.studentPoints) {
     elements.studentPoints.textContent = String(state.studentPoints);
@@ -219,7 +291,7 @@ function applyAudioBySlide(slide) {
   }
 
   audio.setBgmEnabled(state.bgmEnabled);
-  if (slide.kind === "rhythm") {
+  if (typeof slide.bpm === "number" && slide.bpm > 0) {
     audio.setMetronome(slide.bpm);
   } else {
     audio.setMetronome(null);
@@ -233,6 +305,7 @@ function render() {
   updateHintPanel(slide);
   updatePreview(slide);
   updateTimer();
+  updateTimerButtons();
   updateScore();
   updateMirrorChip();
   updateSoundButtons();
@@ -241,12 +314,12 @@ function render() {
 }
 
 function setState(patch, { broadcast = true } = {}) {
-  state = {
+  state = normalizeTimerState({
     ...state,
     ...patch,
     slideIndex: clamp(patch.slideIndex ?? state.slideIndex, 0, WEEK5_SLIDES.length - 1),
     updatedAt: nowMs()
-  };
+  });
 
   render();
 
@@ -261,7 +334,6 @@ async function ensureAudioReady() {
   }
   audioReady = await audio.unlock();
   if (audioReady) {
-    audio.playToggle();
     applyAudioBySlide(currentSlide());
   }
   updateSoundButtons();
@@ -277,6 +349,37 @@ async function goPrev() {
   await ensureAudioReady();
   audio.playNavigate();
   setState({ slideIndex: state.slideIndex - 1 });
+}
+
+async function startOrResumeTimer() {
+  await ensureAudioReady();
+  audio.playToggle();
+  const elapsed = lessonElapsedSeconds();
+  setState({
+    timerOffsetSec: elapsed >= LESSON_DURATION_SECONDS ? 0 : elapsed,
+    timerRunning: true,
+    timerStartedAt: nowMs()
+  });
+}
+
+async function stopTimer() {
+  await ensureAudioReady();
+  audio.playToggle();
+  setState({
+    timerOffsetSec: lessonElapsedSeconds(),
+    timerRunning: false,
+    timerStartedAt: null
+  });
+}
+
+async function resetTimer() {
+  await ensureAudioReady();
+  audio.playNavigate();
+  setState({
+    timerOffsetSec: 0,
+    timerRunning: false,
+    timerStartedAt: null
+  });
 }
 
 function handleArrowKey(event) {
@@ -312,6 +415,16 @@ async function setupControls() {
 
   elements.prevButton.addEventListener("click", goPrev);
 
+  if (elements.timerStartButton) {
+    elements.timerStartButton.addEventListener("click", startOrResumeTimer);
+  }
+  if (elements.timerStopButton) {
+    elements.timerStopButton.addEventListener("click", stopTimer);
+  }
+  if (elements.timerResetButton) {
+    elements.timerResetButton.addEventListener("click", resetTimer);
+  }
+
   elements.studentPointButton.addEventListener("click", async () => {
     await ensureAudioReady();
     audio.playPoint("student");
@@ -343,6 +456,17 @@ async function setupControls() {
       await ensureAudioReady();
       audio.playIncorrect();
       setState({ fxEvent: makeFxEvent("incorrect") });
+    });
+  }
+
+  if (elements.resetPointsButton) {
+    elements.resetPointsButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playNavigate();
+      setState({
+        studentPoints: 0,
+        teacherPoints: 0
+      });
     });
   }
 
@@ -380,10 +504,11 @@ function setupRealtimeSync() {
     if (!incoming || typeof incoming !== "object") {
       return;
     }
-    if ((incoming.updatedAt || 0) <= (state.updatedAt || 0)) {
+    const normalizedIncoming = normalizeTimerState(incoming);
+    if ((normalizedIncoming.updatedAt || 0) <= (state.updatedAt || 0)) {
       return;
     }
-    state = { ...state, ...incoming };
+    state = normalizeTimerState({ ...state, ...normalizedIncoming });
     render();
   });
 
@@ -396,16 +521,21 @@ function setupRealtimeSync() {
   });
 
   window.setInterval(() => {
+    if (state.timerRunning && lessonElapsedSeconds() >= LESSON_DURATION_SECONDS) {
+      setState({
+        timerRunning: false,
+        timerOffsetSec: LESSON_DURATION_SECONDS,
+        timerStartedAt: null
+      });
+      return;
+    }
     updateMirrorChip();
     updateTimer();
+    updateTimerButtons();
   }, 500);
 }
 
 function bootstrap() {
-  if (!state.startedAt) {
-    state.startedAt = nowMs();
-  }
-
   buildFlowSteps();
   buildGoals();
   buildHintList();

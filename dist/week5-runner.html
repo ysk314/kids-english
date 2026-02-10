@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>授業ランナー（第5週）</title>
-    <script type="module" crossorigin src="./assets/runner-BtbJkaKD.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/sessionBus-250mKTzo.js">
-    <link rel="stylesheet" crossorigin href="./assets/sessionBus-D5cTB3fC.css">
+    <script type="module" crossorigin src="./assets/runner-q_TN7Mm0.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/sessionBus-cVcBlsdJ.js">
+    <link rel="stylesheet" crossorigin href="./assets/sessionBus-DYLLiqq2.css">
   </head>
   <body class="week5-runner-page">
     <div class="runner-scale" data-role="runner-scale">
@@ -29,7 +29,14 @@
       <section class="panel runner-head-panel">
         <div class="runner-mainline">
           <div data-role="flow-steps" class="flow-steps flow-inline"></div>
-          <div class="timer" data-testid="lesson-timer">00:00 / 45:00</div>
+          <div class="timer-cluster">
+            <div class="timer" data-testid="lesson-timer">00:00 / 45:00</div>
+            <div class="timer-icon-group" role="group" aria-label="タイマー操作">
+              <button type="button" class="timer-icon-btn" data-testid="timer-start-btn" title="開始/再開" aria-label="開始/再開">▶</button>
+              <button type="button" class="timer-icon-btn" data-testid="timer-stop-btn" title="停止" aria-label="停止">■</button>
+              <button type="button" class="timer-icon-btn" data-testid="timer-reset-btn" title="リセット" aria-label="リセット">↺</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -59,15 +66,39 @@
         <aside class="runner-right-stack">
           <article class="control-panel runner-controller-panel">
             <h5>講師コントローラー（加点はいつでも）</h5>
-            <div class="control-stack">
-              <button type="button" class="btn utility" data-testid="open-bigscreen-btn">大画面をひらく</button>
-              <button type="button" class="btn utility" data-testid="sound-btn">サウンド開始</button>
-              <button type="button" class="btn utility" data-testid="correct-btn">正解</button>
-              <button type="button" class="btn utility" data-testid="incorrect-btn">不正解</button>
-              <button type="button" class="btn point-student" data-testid="student-point-btn">みんなに+1</button>
-              <button type="button" class="btn point-teacher" data-testid="teacher-point-btn">むつみ先生+1</button>
-              <button type="button" class="btn soft" data-testid="prev-btn">前へ</button>
-              <button type="button" class="btn accent" data-testid="next-btn">次へ</button>
+            <div class="control-groups">
+              <section class="control-group">
+                <p class="control-label">表示・音</p>
+                <div class="control-row row-2">
+                  <button type="button" class="btn btn-open" data-testid="open-bigscreen-btn">大画面をひらく</button>
+                  <button type="button" class="btn btn-sound" data-testid="sound-btn">サウンド開始</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">判定</p>
+                <div class="control-row row-2">
+                  <button type="button" class="btn btn-correct" data-testid="correct-btn">正解</button>
+                  <button type="button" class="btn btn-incorrect" data-testid="incorrect-btn">不正解</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">得点</p>
+                <div class="control-row row-3">
+                  <button type="button" class="btn point-student" data-testid="student-point-btn">みんなに+1</button>
+                  <button type="button" class="btn point-teacher" data-testid="teacher-point-btn">むつみ先生+1</button>
+                  <button type="button" class="btn btn-reset" data-testid="reset-points-btn">点数リセット</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">進行</p>
+                <div class="control-row row-2">
+                  <button type="button" class="btn soft" data-testid="prev-btn">前へ</button>
+                  <button type="button" class="btn accent" data-testid="next-btn">次へ</button>
+                </div>
+              </section>
             </div>
             <div class="hidden-metrics" aria-hidden="true">
               <span data-testid="student-points">0</span>

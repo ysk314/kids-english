@@ -43,4 +43,16 @@ describe("week5 lesson data", () => {
     expect(FLOW_STEPS).toHaveLength(6);
     expect(LESSON_GOALS).toHaveLength(3);
   });
+
+  it("uses rhythm bpm for deep compare slides and train wording in deep step", () => {
+    const jpDeepCompare = WEEK5_SLIDES.filter((slide) => slide.id.startsWith("15_jp_deep_compare_"));
+    const enDeepCompare = WEEK5_SLIDES.filter((slide) => slide.id.startsWith("19_en_deep_compare_"));
+    expect(jpDeepCompare.every((slide) => slide.bpm === 90)).toBe(true);
+    expect(enDeepCompare.every((slide) => slide.bpm === 95)).toBe(true);
+
+    const jpDeepStep4 = WEEK5_SLIDES.find((slide) => slide.id === "14_jp_deep_step_4");
+    const enDeepStep4 = WEEK5_SLIDES.find((slide) => slide.id === "18_en_deep_step_4");
+    expect(jpDeepStep4?.hint.script).toContain("でんしゃ");
+    expect(enDeepStep4?.hint.script).toContain("train");
+  });
 });

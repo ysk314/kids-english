@@ -861,6 +861,9 @@ body {
   padding: 16px 20px;
   box-shadow: var(--shadow);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .bigscreen.jp {
@@ -870,6 +873,13 @@ body {
 .bigscreen.en {
   background: radial-gradient(circle at 16% 16%, #88d8ff, #67a2ff 35%, #8c7dff 88%);
   color: #11172b;
+}
+
+.bigscreen.mix {
+  background:
+    radial-gradient(circle at 18% 16%, #ffe790, transparent 42%),
+    radial-gradient(circle at 82% 18%, #8ad7ff, transparent 45%),
+    linear-gradient(130deg, #ffcc74 8%, #ff8aa1 52%, #83b8ff 100%);
 }
 
 .bigscreen.roleplay {
@@ -884,6 +894,14 @@ body {
   font-size: clamp(34px, 4.4vw, 56px);
   font-family: "Yusei Magic", sans-serif;
   line-height: 1.08;
+}
+
+.slide-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .bigscreen h2 {
@@ -976,7 +994,7 @@ body {
 }
 
 .flow-progress {
-  margin-top: 6px;
+  margin-top: 0;
   display: flex;
   gap: 6px;
 }
@@ -993,10 +1011,11 @@ body {
 }
 
 .main-choice {
-  margin-top: 8px;
+  margin-top: 2px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 12px;
+  height: 100%;
 }
 
 .target-large,
@@ -1005,11 +1024,18 @@ body {
   border: 3px solid rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.83);
   padding: 8px;
+  height: 100%;
+}
+
+.target-large {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .target-large img {
-  width: min(440px, 100%);
-  height: 270px;
+  width: min(380px, 88%);
+  height: min(34vh, 320px);
   object-fit: contain;
   display: block;
   margin: 0 auto;
@@ -1029,33 +1055,40 @@ body {
 
 .option-stack {
   display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  align-content: start;
+  height: 100%;
 }
 
 .option-card {
   border-radius: 16px;
   border: 3px solid #e9dbe2;
   background: #fff;
-  padding: 6px;
-  display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   align-items: center;
+  justify-content: center;
+  min-height: 0;
 }
 
 .option-card img {
-  width: 76px;
-  height: 76px;
+  width: min(180px, 82%);
+  height: min(17vh, 160px);
   object-fit: contain;
 }
 
 .option-card .txt {
   font-size: clamp(20px, 2.5vw, 30px);
   font-weight: 800;
+  text-align: center;
+  line-height: 1.08;
 }
 
 .focus-pair {
-  margin-top: 8px;
+  margin-top: 2px;
   border-radius: 26px;
   border: 3px solid rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.82);
@@ -1080,8 +1113,8 @@ body {
 }
 
 .focus-card img {
-  width: min(260px, 100%);
-  height: 220px;
+  width: min(340px, 100%);
+  height: min(34vh, 300px);
   object-fit: contain;
 }
 
@@ -1092,7 +1125,7 @@ body {
 }
 
 .deep-board {
-  margin-top: 8px;
+  margin-top: 2px;
   border-radius: 24px;
   border: 3px solid rgba(255, 255, 255, 0.88);
   background: rgba(255, 255, 255, 0.82);
@@ -1115,7 +1148,7 @@ body {
 
 .deep-item img {
   width: 100%;
-  height: 180px;
+  height: min(26vh, 240px);
   object-fit: contain;
 }
 
@@ -1149,7 +1182,7 @@ body {
 }
 
 .focus-card.compact img {
-  height: 210px;
+  height: min(34vh, 300px);
 }
 
 .target-large.compact img {
@@ -1165,11 +1198,11 @@ body {
 }
 
 .deep-card img {
-  height: 190px;
+  height: min(42vh, 420px);
 }
 
 .divider-card {
-  margin-top: 12px;
+  margin-top: 4px;
   border-radius: 28px;
   border: 3px solid rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.86);
@@ -1189,12 +1222,19 @@ body {
   font-size: clamp(20px, 3vw, 34px);
 }
 
-.theme-title-card {
+.divider-card span {
+  display: block;
   margin-top: 8px;
+  font-size: clamp(16px, 2.2vw, 28px);
+  font-weight: 700;
+}
+
+.theme-title-card {
+  margin-top: 2px;
   border-radius: 24px;
   border: 3px solid rgba(255, 255, 255, 0.88);
   background: rgba(255, 255, 255, 0.84);
-  padding: 16px 20px;
+  padding: 12px 16px;
   text-align: center;
 }
 
@@ -1211,10 +1251,11 @@ body {
 }
 
 .pair-summary-grid {
-  margin-top: 10px;
+  margin-top: 2px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  align-content: start;
 }
 
 .pair-summary-item {
@@ -1223,19 +1264,20 @@ body {
   background: rgba(255, 255, 255, 0.84);
   padding: 8px 10px;
   display: grid;
-  grid-template-columns: 70px 1fr auto 70px 1fr;
+  grid-template-columns: 122px 1fr auto 122px 1fr;
   align-items: center;
   gap: 8px;
+  min-height: 138px;
 }
 
 .pair-summary-item img {
-  width: 70px;
-  height: 70px;
+  width: 122px;
+  height: 122px;
   object-fit: contain;
 }
 
 .pair-summary-item span {
-  font-size: clamp(20px, 2.3vw, 28px);
+  font-size: clamp(25px, 2.6vw, 34px);
   font-weight: 800;
   line-height: 1;
 }
@@ -1247,6 +1289,48 @@ body {
 
 .focus-pair.deep-seq {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.focus-pair.deep-seq.deep-single {
+  grid-template-columns: 1fr;
+  width: min(760px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.focus-pair.deep-seq.deep-single .focus-card {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.body-theme .pair-summary-grid,
+.body-rhythm-summary .pair-summary-grid {
+  flex: 1;
+  grid-auto-rows: minmax(140px, 1fr);
+}
+
+.body-rhythm .focus-pair,
+.body-work .main-choice,
+.body-deep-step .focus-pair,
+.body-deep-compare .deep-board {
+  flex: 1;
+}
+
+.end-card {
+  padding-top: 34px;
+  padding-bottom: 34px;
+  border-color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(250, 239, 247, 0.86));
+}
+
+.split-card p,
+.split-card strong {
+  font-size: clamp(36px, 4.8vw, 58px);
+  line-height: 1.06;
+}
+
+.split-card strong {
+  margin-top: 8px;
 }
 
 .goal-grid {
@@ -1380,13 +1464,9 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .option-card {
-    grid-template-columns: 66px 1fr;
-  }
-
   .option-card img {
-    width: 66px;
-    height: 66px;
+    width: 96px;
+    height: 82px;
   }
 
   .pair-summary-grid {

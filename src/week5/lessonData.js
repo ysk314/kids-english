@@ -33,26 +33,26 @@ const RHYTHM_PAIRS_EN = [
   {
     left: "long",
     right: "short",
-    leftImg: "../assets/oppositions_cards/long_en.png",
-    rightImg: "../assets/oppositions_cards/short_en.png"
+    leftImg: "../assets/oppositions_cards/long_jp.png",
+    rightImg: "../assets/oppositions_cards/short_jp.png"
   },
   {
     left: "clean",
     right: "dirty",
-    leftImg: "../assets/oppositions_cards/clean_en.png",
-    rightImg: "../assets/oppositions_cards/dirty_en.png"
+    leftImg: "../assets/oppositions_cards/clean_jp.png",
+    rightImg: "../assets/oppositions_cards/dirty_jp.png"
   },
   {
     left: "bright",
     right: "dark",
-    leftImg: "../assets/oppositions_cards/bright_en.png",
-    rightImg: "../assets/oppositions_cards/dark_en.png"
+    leftImg: "../assets/oppositions_cards/bright_jp.png",
+    rightImg: "../assets/oppositions_cards/dark_jp.png"
   },
   {
     left: "stand up",
     right: "sit down",
-    leftImg: "../assets/oppositions_cards/stand_up_en.png",
-    rightImg: "../assets/oppositions_cards/sit_down_en.png"
+    leftImg: "../assets/oppositions_cards/stand_up_jp.png",
+    rightImg: "../assets/oppositions_cards/sit_down_jp.png"
   }
 ];
 
@@ -145,15 +145,15 @@ const WORK_EN = [
 const DEEP_COMPARE_PAIRS_JP = [
   "みじかいえんぴつ / ながいえんぴつ",
   "ながいえんぴつ / へび",
-  "へび / ぞうのはな",
-  "みじかいえんぴつ / ぞうのはな"
+  "へび / でんしゃ",
+  "みじかいえんぴつ / でんしゃ"
 ];
 
 const DEEP_COMPARE_PAIRS_EN = [
   "short pencil / long pencil",
   "long pencil / snake",
-  "snake / elephant trunk",
-  "short pencil / elephant trunk"
+  "snake / train",
+  "short pencil / train"
 ];
 
 export const FLOW_STEPS = [
@@ -225,8 +225,8 @@ function createEndSlide() {
     screenPath: screenPath("20_end"),
     hint: {
       title: "End",
-      aim: "今日の学びを締めて、次回への期待で終える。",
-      script: 'Teacher: "Great job today! See you next time!"'
+      aim: "得点発表と演出で授業を明るく締める。",
+      script: 'Teacher: "Great job today! Score announcement!"'
     }
   };
 }
@@ -297,16 +297,16 @@ function createWorkSlides({ startNumber, phase, stepId, modeLabel, list }) {
 function createDeepStepSlides({ startNumber, phase, stepId, modeLabel }) {
   const jpScripts = [
     "せんせい「これは長い？」",
-    "せんせい「こっちは長い？どちらが短い？」",
+    "せんせい「こっちは長い？」",
     "せんせい「へびは長い？何と比べた？」",
-    "せんせい「ぞうのはなは長い？」"
+    "せんせい「でんしゃは長い？」"
   ];
 
   const enScripts = [
     'Teacher: "Is this long?"',
-    'Teacher: "Which one is longer?"',
+    'Teacher: "Is this long?"',
     'Teacher: "Is the snake long? Compared to what?"',
-    'Teacher: "Is the elephant trunk long?"'
+    'Teacher: "Is the train long?"'
   ];
 
   return Array.from({ length: 4 }, (_, index) => {
@@ -328,7 +328,7 @@ function createDeepStepSlides({ startNumber, phase, stepId, modeLabel }) {
   });
 }
 
-function createDeepCompareSlides({ startNumber, phase, stepId, modeLabel, pairs, scriptPrefix }) {
+function createDeepCompareSlides({ startNumber, phase, stepId, modeLabel, pairs, scriptPrefix, bpm }) {
   return pairs.map((pair, index) => {
     const id = `${startNumber}_${phase}_deep_compare_${index + 1}`;
     return {
@@ -336,7 +336,7 @@ function createDeepCompareSlides({ startNumber, phase, stepId, modeLabel, pairs,
       phase,
       stepId,
       kind: "deep_compare",
-      bpm: null,
+      bpm,
       modeLabel,
       screenPath: screenPath(id),
       hint: {
@@ -405,15 +405,16 @@ export function buildWeek5Slides() {
       stepId: "jp_deep",
       modeLabel: "日本語深掘り",
       pairs: DEEP_COMPARE_PAIRS_JP,
-      scriptPrefix: "Teacher"
+      scriptPrefix: "Teacher",
+      bpm: 90
     }),
     createDividerSlide({
       id: "15_break_en_start",
       stepId: "en_rhythm",
       modeLabel: "英語導入",
       title: "English Part Start!",
-      aim: "日本語で作った意味を、英語の音へ切り替える。",
-      script: 'Teacher: "English Part Start! Same motions, English words."'
+      aim: "日本語パートを締め、英語の音へ切り替える。",
+      script: 'Teacher: "Japanese part is done. English Part Start!"'
     }),
     ...createRhythmSlides({
       startNumber: 16,
@@ -466,7 +467,8 @@ export function buildWeek5Slides() {
       stepId: "en_deep",
       modeLabel: "英語深掘り",
       pairs: DEEP_COMPARE_PAIRS_EN,
-      scriptPrefix: "Teacher"
+      scriptPrefix: "Teacher",
+      bpm: 95
     }),
     createEndSlide()
   ];

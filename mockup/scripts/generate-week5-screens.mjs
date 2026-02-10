@@ -34,26 +34,26 @@ const EN_PAIRS = [
   {
     leftWord: "long",
     rightWord: "short",
-    leftImg: "../assets/oppositions_cards/long_en.png",
-    rightImg: "../assets/oppositions_cards/short_en.png"
+    leftImg: "../assets/oppositions_cards/long_jp.png",
+    rightImg: "../assets/oppositions_cards/short_jp.png"
   },
   {
     leftWord: "clean",
     rightWord: "dirty",
-    leftImg: "../assets/oppositions_cards/clean_en.png",
-    rightImg: "../assets/oppositions_cards/dirty_en.png"
+    leftImg: "../assets/oppositions_cards/clean_jp.png",
+    rightImg: "../assets/oppositions_cards/dirty_jp.png"
   },
   {
     leftWord: "bright",
     rightWord: "dark",
-    leftImg: "../assets/oppositions_cards/bright_en.png",
-    rightImg: "../assets/oppositions_cards/dark_en.png"
+    leftImg: "../assets/oppositions_cards/bright_jp.png",
+    rightImg: "../assets/oppositions_cards/dark_jp.png"
   },
   {
     leftWord: "stand up",
     rightWord: "sit down",
-    leftImg: "../assets/oppositions_cards/stand_up_en.png",
-    rightImg: "../assets/oppositions_cards/sit_down_en.png"
+    leftImg: "../assets/oppositions_cards/stand_up_jp.png",
+    rightImg: "../assets/oppositions_cards/sit_down_jp.png"
   }
 ];
 
@@ -127,82 +127,82 @@ const JP_QUESTIONS = [
 const EN_QUESTIONS = [
   {
     targetWord: "long",
-    targetImg: "../assets/oppositions_cards/long_en.png",
+    targetImg: "../assets/oppositions_cards/long_jp.png",
     options: [
-      { text: "short", img: "../assets/oppositions_cards/short_en.png", correct: true },
-      { text: "bright", img: "../assets/oppositions_cards/bright_en.png", correct: false }
+      { text: "short", img: "../assets/oppositions_cards/short_jp.png", correct: true },
+      { text: "bright", img: "../assets/oppositions_cards/bright_jp.png", correct: false }
     ]
   },
   {
     targetWord: "short",
-    targetImg: "../assets/oppositions_cards/short_en.png",
+    targetImg: "../assets/oppositions_cards/short_jp.png",
     options: [
-      { text: "long", img: "../assets/oppositions_cards/long_en.png", correct: true },
-      { text: "dark", img: "../assets/oppositions_cards/dark_en.png", correct: false }
+      { text: "long", img: "../assets/oppositions_cards/long_jp.png", correct: true },
+      { text: "dark", img: "../assets/oppositions_cards/dark_jp.png", correct: false }
     ]
   },
   {
     targetWord: "clean",
-    targetImg: "../assets/oppositions_cards/clean_en.png",
+    targetImg: "../assets/oppositions_cards/clean_jp.png",
     options: [
-      { text: "dirty", img: "../assets/oppositions_cards/dirty_en.png", correct: true },
-      { text: "stand up", img: "../assets/oppositions_cards/stand_up_en.png", correct: false }
+      { text: "dirty", img: "../assets/oppositions_cards/dirty_jp.png", correct: true },
+      { text: "stand up", img: "../assets/oppositions_cards/stand_up_jp.png", correct: false }
     ]
   },
   {
     targetWord: "dirty",
-    targetImg: "../assets/oppositions_cards/dirty_en.png",
+    targetImg: "../assets/oppositions_cards/dirty_jp.png",
     options: [
-      { text: "clean", img: "../assets/oppositions_cards/clean_en.png", correct: true },
-      { text: "sit down", img: "../assets/oppositions_cards/sit_down_en.png", correct: false }
+      { text: "clean", img: "../assets/oppositions_cards/clean_jp.png", correct: true },
+      { text: "sit down", img: "../assets/oppositions_cards/sit_down_jp.png", correct: false }
     ]
   },
   {
     targetWord: "bright",
-    targetImg: "../assets/oppositions_cards/bright_en.png",
+    targetImg: "../assets/oppositions_cards/bright_jp.png",
     options: [
-      { text: "dark", img: "../assets/oppositions_cards/dark_en.png", correct: true },
-      { text: "short", img: "../assets/oppositions_cards/short_en.png", correct: false }
+      { text: "dark", img: "../assets/oppositions_cards/dark_jp.png", correct: true },
+      { text: "short", img: "../assets/oppositions_cards/short_jp.png", correct: false }
     ]
   },
   {
     targetWord: "dark",
-    targetImg: "../assets/oppositions_cards/dark_en.png",
+    targetImg: "../assets/oppositions_cards/dark_jp.png",
     options: [
-      { text: "bright", img: "../assets/oppositions_cards/bright_en.png", correct: true },
-      { text: "long", img: "../assets/oppositions_cards/long_en.png", correct: false }
+      { text: "bright", img: "../assets/oppositions_cards/bright_jp.png", correct: true },
+      { text: "long", img: "../assets/oppositions_cards/long_jp.png", correct: false }
     ]
   },
   {
     targetWord: "stand up",
-    targetImg: "../assets/oppositions_cards/stand_up_en.png",
+    targetImg: "../assets/oppositions_cards/stand_up_jp.png",
     options: [
-      { text: "sit down", img: "../assets/oppositions_cards/sit_down_en.png", correct: true },
-      { text: "clean", img: "../assets/oppositions_cards/clean_en.png", correct: false }
+      { text: "sit down", img: "../assets/oppositions_cards/sit_down_jp.png", correct: true },
+      { text: "clean", img: "../assets/oppositions_cards/clean_jp.png", correct: false }
     ]
   },
   {
     targetWord: "sit down",
-    targetImg: "../assets/oppositions_cards/sit_down_en.png",
+    targetImg: "../assets/oppositions_cards/sit_down_jp.png",
     options: [
-      { text: "stand up", img: "../assets/oppositions_cards/stand_up_en.png", correct: true },
-      { text: "dirty", img: "../assets/oppositions_cards/dirty_en.png", correct: false }
+      { text: "stand up", img: "../assets/oppositions_cards/stand_up_jp.png", correct: true },
+      { text: "dirty", img: "../assets/oppositions_cards/dirty_jp.png", correct: false }
     ]
   }
 ];
 
 const DEEP_ITEMS_JP = [
-  { label: "みじかいえんぴつ", img: "../assets/deep_think/pencil_short.png" },
+  { label: "みじかいえんぴつ", img: "../assets/deep_think/pencil_short_tiny.svg" },
   { label: "ながいえんぴつ", img: "../assets/deep_think/pencil_long.png" },
   { label: "へび", img: "../assets/deep_think/snake_long.png" },
-  { label: "ぞうのはな", img: "../assets/deep_think/elephant_trunk.png" }
+  { label: "でんしゃ", img: "../assets/deep_think/train_long.svg" }
 ];
 
 const DEEP_ITEMS_EN = [
-  { label: "short pencil", img: "../assets/deep_think/pencil_short.png" },
+  { label: "short pencil", img: "../assets/deep_think/pencil_short_tiny.svg" },
   { label: "long pencil", img: "../assets/deep_think/pencil_long.png" },
   { label: "snake", img: "../assets/deep_think/snake_long.png" },
-  { label: "elephant trunk", img: "../assets/deep_think/elephant_trunk.png" }
+  { label: "train", img: "../assets/deep_think/train_long.svg" }
 ];
 
 function progressDots(count, active) {
@@ -212,9 +212,7 @@ function progressDots(count, active) {
   ).join("")}</div>`;
 }
 
-function pageShell({ title, mode, heading, body }) {
-  const bgmText = mode === "en" ? "BGM ON" : "おんがく あり";
-
+function pageShell({ title, mode, heading, body, extraClass = "", bodyClass = "" }) {
   return `<!doctype html>
 <html lang="ja">
   <head>
@@ -224,16 +222,9 @@ function pageShell({ title, mode, heading, body }) {
     <link rel="stylesheet" href="../shared.css">
   </head>
   <body>
-    <main class="bigscreen ${mode}">
-      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px">
-        <div class="bgm-chip">${bgmText}
-          <span class="rhythm-bars">
-            <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
-          </span>
-        </div>
-      </div>
+    <main class="bigscreen ${mode}${extraClass ? ` ${extraClass}` : ""}">
       <h1>${heading}</h1>
-      ${body}
+      <section class="slide-body ${bodyClass}">${body}</section>
     </main>
   </body>
 </html>`;
@@ -257,9 +248,10 @@ function renderDivider({ mode, title, subtitle }) {
 
 function renderEnd() {
   const body = `
-    <div class="divider-card">
+    <div class="divider-card end-card">
       <p>End</p>
-      <strong>Great job today!</strong>
+      <strong>Great Job!</strong>
+      <span>See you next lesson!</span>
     </div>
   `;
 
@@ -295,7 +287,8 @@ function renderThemeTitle() {
     title: "today theme",
     mode: "jp",
     heading: "だい5しゅう はんたいことば",
-    body
+    body,
+    bodyClass: "body-theme"
   });
 }
 
@@ -322,7 +315,8 @@ function renderRhythmSummary(pairs, mode) {
     title: "rhythm summary",
     mode,
     heading: mode === "en" ? "All 4 Rhythm Pairs" : "4せっと まとめ",
-    body
+    body,
+    bodyClass: "body-rhythm-summary"
   });
 }
 
@@ -346,7 +340,8 @@ function renderRhythm(pair, idx, mode) {
     title: `rhythm ${idx + 1}`,
     mode,
     heading: `${pair.leftWord} / ${pair.rightWord}`,
-    body
+    body,
+    bodyClass: "body-rhythm"
   });
 }
 
@@ -378,25 +373,22 @@ function renderWork(q, idx, mode) {
     title: `work ${idx + 1}`,
     mode,
     heading: mode === "en" ? `Which is opposite to ${q.targetWord}?` : `${q.targetWord} の はんたいは どっち？`,
-    body
+    body,
+    bodyClass: "body-work"
   });
 }
 
 function renderDeepStep(idx, mode, items) {
-  const shown = items.slice(0, idx + 1);
-  const cards = shown
-    .map(
-      (item) => `
+  const item = items[idx];
+  const cards = `
       <div class="focus-card compact deep-card">
         <img src="${item.img}" alt="${item.label}">
         <div class="label">${item.label}</div>
-      </div>`
-    )
-    .join("");
+      </div>`;
 
   const body = `
       ${progressDots(4, idx)}
-      <div class="focus-pair compact deep-seq" style="grid-template-columns: repeat(${shown.length}, minmax(0,1fr));">
+      <div class="focus-pair compact deep-seq deep-single">
         ${cards}
       </div>
   `;
@@ -405,7 +397,8 @@ function renderDeepStep(idx, mode, items) {
     title: `deep step ${idx + 1}`,
     mode,
     heading: mode === "en" ? "Is this long?" : "これは ながい？",
-    body
+    body,
+    bodyClass: "body-deep-step"
   });
 }
 
@@ -432,7 +425,26 @@ function renderDeepCompare(idx, pair, mode, items) {
     title: `deep compare ${idx + 1}`,
     mode,
     heading: mode === "en" ? "Compare two cards!" : "ふたつを くらべよう！",
-    body
+    body,
+    bodyClass: "body-deep-compare"
+  });
+}
+
+function renderEnStartBreak() {
+  const body = `
+    <div class="divider-card split-card">
+      <p>日本語パートは これで おしまい！</p>
+      <strong>English Part Start!</strong>
+    </div>
+  `;
+
+  return pageShell({
+    title: "English Part Start!",
+    mode: "en",
+    heading: "Get Ready",
+    body,
+    extraClass: "mix",
+    bodyClass: "body-divider"
   });
 }
 
@@ -469,10 +481,7 @@ function generate() {
     write(`15_jp_deep_compare_${idx + 1}.html`, renderDeepCompare(idx, pair, "jp", DEEP_ITEMS_JP))
   );
 
-  write(
-    "15_break_en_start.html",
-    renderDivider({ mode: "en", title: "English Part Start!", subtitle: "Same motions, English words." })
-  );
+  write("15_break_en_start.html", renderEnStartBreak());
 
   EN_PAIRS.forEach((pair, idx) => write(`16_en_rhythm_${idx + 1}.html`, renderRhythm(pair, idx, "en")));
   write("16_en_rhythm_summary.html", renderRhythmSummary(EN_PAIRS, "en"));
