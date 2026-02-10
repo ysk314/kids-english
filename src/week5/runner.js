@@ -21,6 +21,7 @@ const fallbackState = {
   slideIndex: 0,
   studentPoints: 0,
   teacherPoints: 0,
+  slideInteractions: {},
   bgmEnabled: true,
   timerRunning: true,
   timerOffsetSec: 0,
@@ -42,6 +43,10 @@ state.slideIndex = clamp(state.slideIndex, 0, WEEK5_SLIDES.length - 1);
 function normalizeTimerState(rawState) {
   const normalized = { ...rawState };
   const now = nowMs();
+
+  if (!normalized.slideInteractions || typeof normalized.slideInteractions !== "object") {
+    normalized.slideInteractions = {};
+  }
 
   if (
     typeof normalized.timerRunning !== "boolean" ||
@@ -119,7 +124,11 @@ const elements = {
   incorrectButton: document.querySelector("[data-testid='incorrect-btn']"),
   resetPointsButton: document.querySelector("[data-testid='reset-points-btn']"),
   openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
-  soundButton: document.querySelector("[data-testid='sound-btn']")
+  soundButton: document.querySelector("[data-testid='sound-btn']"),
+  answerAButton: document.querySelector("[data-testid='answer-0-btn']"),
+  answerBButton: document.querySelector("[data-testid='answer-1-btn']"),
+  subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
+  subNextButton: document.querySelector("[data-testid='sub-next-btn']")
 };
 
 let activeHintButton = null;
@@ -159,6 +168,32 @@ function buildHintList() {
 
 function currentSlide() {
   return WEEK5_SLIDES[state.slideIndex] || WEEK5_SLIDES[0];
+}
+
+function getSlideInteraction(slideId) {
+  const interaction = state.slideInteractions?.[slideId];
+  if (!interaction || typeof interaction !== "object") {
+    return {};
+  }
+  return interaction;
+}
+
+function getSubStepMax(slide) {
+  if (slide.kind === "deep_compare") {
+    return 4;
+  }
+  return 0;
+}
+
+function inferDefaultSubStep(slide) {
+  if (slide.kind !== "deep_compare") {
+    return 0;
+  }
+  const match = /deep_compare_(\d+)$/.exec(slide.id);
+  if (!match) {
+    return 0;
+  }
+  return clamp(Number(match[1]) - 1, 0, 3);
 }
 
 function lessonElapsedSeconds() {
@@ -255,6 +290,26 @@ function updateScore() {
   }
 }
 
+function updateSlideActionButtons(slide) {
+  const isWork = slide.kind === "work" && Array.isArray(slide.choices) && slide.choices.length >= 2;
+  if (elements.answerAButton && elements.answerBButton) {
+    elements.answerAButton.disabled = !isWork;
+    elements.answerBButton.disabled = !isWork;
+    elements.answerAButton.textContent = isWork ? `候補1: ${slide.choices[0]}` : "候補1";
+    elements.answerBButton.textContent = isWork ? `候補2: ${slide.choices[1]}` : "候補2";
+  }
+
+  const maxStep = getSubStepMax(slide);
+  const hasSubStep = maxStep > 0;
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (elements.subPrevButton && elements.subNextButton) {
+    elements.subPrevButton.disabled = !hasSubStep && state.slideIndex <= 0;
+    elements.subNextButton.disabled = !hasSubStep && state.slideIndex >= WEEK5_SLIDES.length - 1;
+    elements.subPrevButton.textContent = hasSubStep ? `◀ スライド内 ${currentStep + 1}/${maxStep}` : "◀ スライド内";
+    elements.subNextButton.textContent = hasSubStep ? `スライド内 ${currentStep + 1}/${maxStep} ▶` : "スライド内 ▶";
+  }
+}
+
 function updateMirrorChip() {
   const connected = nowMs() - mirrorLastSeenAt < 4_500;
   elements.mirrorChip.textContent = connected ? "Mirror Connected" : "Mirror Waiting";
@@ -298,6 +353,17 @@ function applyAudioBySlide(slide) {
   }
 }
 
+function setSlideInteraction(slideId, patch) {
+  const prev = getSlideInteraction(slideId);
+  return {
+    ...state.slideInteractions,
+    [slideId]: {
+      ...prev,
+      ...patch
+    }
+  };
+}
+
 function render() {
   const slide = currentSlide();
   elements.slideCounter.textContent = `${state.slideIndex + 1} / ${WEEK5_SLIDES.length}`;
@@ -307,6 +373,7 @@ function render() {
   updateTimer();
   updateTimerButtons();
   updateScore();
+  updateSlideActionButtons(slide);
   updateMirrorChip();
   updateSoundButtons();
   applyAudioBySlide(slide);
@@ -349,6 +416,71 @@ async function goPrev() {
   await ensureAudioReady();
   audio.playNavigate();
   setState({ slideIndex: state.slideIndex - 1 });
+}
+
+async function submitWorkChoice(choiceIndex) {
+  const slide = currentSlide();
+  if (slide.kind !== "work" || !Array.isArray(slide.choices) || typeof slide.correctIndex !== "number") {
+    return;
+  }
+
+  await ensureAudioReady();
+  const isCorrect = choiceIndex === slide.correctIndex;
+  if (isCorrect) {
+    audio.playCorrect();
+  } else {
+    audio.playIncorrect();
+  }
+
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      selectedChoice: choiceIndex,
+      answeredAt: nowMs()
+    }),
+    fxEvent: makeFxEvent(isCorrect ? "correct" : "incorrect")
+  });
+}
+
+async function goSubNext() {
+  const slide = currentSlide();
+  const maxStep = getSubStepMax(slide);
+  if (maxStep <= 0) {
+    await goNext();
+    return;
+  }
+  await ensureAudioReady();
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (currentStep >= maxStep - 1) {
+    await goNext();
+    return;
+  }
+  audio.playNavigate();
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      subStep: currentStep + 1
+    })
+  });
+}
+
+async function goSubPrev() {
+  const slide = currentSlide();
+  const maxStep = getSubStepMax(slide);
+  if (maxStep <= 0) {
+    await goPrev();
+    return;
+  }
+  await ensureAudioReady();
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (currentStep <= 0) {
+    await goPrev();
+    return;
+  }
+  audio.playNavigate();
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      subStep: currentStep - 1
+    })
+  });
 }
 
 async function startOrResumeTimer() {
@@ -470,6 +602,22 @@ async function setupControls() {
     });
   }
 
+  if (elements.answerAButton) {
+    elements.answerAButton.addEventListener("click", () => submitWorkChoice(0));
+  }
+
+  if (elements.answerBButton) {
+    elements.answerBButton.addEventListener("click", () => submitWorkChoice(1));
+  }
+
+  if (elements.subPrevButton) {
+    elements.subPrevButton.addEventListener("click", goSubPrev);
+  }
+
+  if (elements.subNextButton) {
+    elements.subNextButton.addEventListener("click", goSubNext);
+  }
+
   elements.soundButton.addEventListener("click", async () => {
     const wasReady = audioReady;
     await ensureAudioReady();
@@ -497,6 +645,19 @@ async function setupControls() {
   });
 
   window.addEventListener("keydown", handleArrowKey);
+
+  audio.onBeat((beat) => {
+    const slide = currentSlide();
+    if (typeof slide.bpm !== "number" || !state.bgmEnabled) {
+      return;
+    }
+    bus.publishSignal("beat", {
+      id: `${beat.at}-${beat.step16}`,
+      step16: beat.step16,
+      bpm: beat.bpm,
+      slideId: slide.id
+    });
+  });
 }
 
 function setupRealtimeSync() {

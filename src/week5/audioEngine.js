@@ -21,6 +21,7 @@ export class Week5AudioEngine {
     this.metroTimer = null;
     this.metroBeat = 0;
     this.activeBpm = null;
+    this.beatListeners = new Set();
   }
 
   async unlock() {
@@ -84,7 +85,9 @@ export class Week5AudioEngine {
     const intervalMs = Math.max(30, Math.floor(60_000 / bpm / 4));
     this.metroBeat = 0;
     this.metroTimer = window.setInterval(() => {
-      this.playDrumPatternStep(this.metroBeat % 16);
+      const step16 = this.metroBeat % 16;
+      this.playDrumPatternStep(step16);
+      this.emitBeat(step16, bpm);
       this.metroBeat += 1;
     }, intervalMs);
   }
@@ -94,6 +97,25 @@ export class Week5AudioEngine {
       window.clearInterval(this.metroTimer);
       this.metroTimer = null;
     }
+  }
+
+  onBeat(handler) {
+    this.beatListeners.add(handler);
+    return () => this.beatListeners.delete(handler);
+  }
+
+  emitBeat(step16, bpm) {
+    this.beatListeners.forEach((handler) => {
+      try {
+        handler({
+          step16,
+          bpm,
+          at: Date.now()
+        });
+      } catch {
+        // no-op
+      }
+    });
   }
 
   playNavigate() {
@@ -341,6 +363,7 @@ export class Week5AudioEngine {
     this.noiseBuffer = null;
     this.correctAudio = null;
     this.wrongAudio = null;
+    this.beatListeners.clear();
     this.enabled = false;
   }
 }

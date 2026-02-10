@@ -60,42 +60,58 @@ const WORK_JP = [
   {
     target: "ながい",
     ask: "ながい の はんたいは どっち？",
-    script: "せんせい「ながい の はんたいは どっち？」"
+    script: "せんせい「ながい の はんたいは どっち？」",
+    choices: ["みじかい", "あかるい"],
+    correctIndex: 0
   },
   {
     target: "みじかい",
     ask: "みじかい の はんたいは どっち？",
-    script: "せんせい「みじかい の はんたいは どっち？」"
+    script: "せんせい「みじかい の はんたいは どっち？」",
+    choices: ["ながい", "くらい"],
+    correctIndex: 0
   },
   {
     target: "きれい",
     ask: "きれい の はんたいは どっち？",
-    script: "せんせい「きれい の はんたいは どっち？」"
+    script: "せんせい「きれい の はんたいは どっち？」",
+    choices: ["きたない", "たつ"],
+    correctIndex: 0
   },
   {
     target: "きたない",
     ask: "きたない の はんたいは どっち？",
-    script: "せんせい「きたない の はんたいは どっち？」"
+    script: "せんせい「きたない の はんたいは どっち？」",
+    choices: ["きれい", "すわる"],
+    correctIndex: 0
   },
   {
     target: "あかるい",
     ask: "あかるい の はんたいは どっち？",
-    script: "せんせい「あかるい の はんたいは どっち？」"
+    script: "せんせい「あかるい の はんたいは どっち？」",
+    choices: ["くらい", "みじかい"],
+    correctIndex: 0
   },
   {
     target: "くらい",
     ask: "くらい の はんたいは どっち？",
-    script: "せんせい「くらい の はんたいは どっち？」"
+    script: "せんせい「くらい の はんたいは どっち？」",
+    choices: ["あかるい", "ながい"],
+    correctIndex: 0
   },
   {
     target: "たつ",
     ask: "たつ の はんたいは どっち？",
-    script: "せんせい「たつ の はんたいは どっち？」"
+    script: "せんせい「たつ の はんたいは どっち？」",
+    choices: ["すわる", "きれい"],
+    correctIndex: 0
   },
   {
     target: "すわる",
     ask: "すわる の はんたいは どっち？",
-    script: "せんせい「すわる の はんたいは どっち？」"
+    script: "せんせい「すわる の はんたいは どっち？」",
+    choices: ["たつ", "きたない"],
+    correctIndex: 0
   }
 ];
 
@@ -103,42 +119,58 @@ const WORK_EN = [
   {
     target: "long",
     ask: "Which is opposite to long?",
-    script: 'Teacher: "Which is opposite to long?"'
+    script: 'Teacher: "Which is opposite to long?"',
+    choices: ["short", "bright"],
+    correctIndex: 0
   },
   {
     target: "short",
     ask: "Which is opposite to short?",
-    script: 'Teacher: "Which is opposite to short?"'
+    script: 'Teacher: "Which is opposite to short?"',
+    choices: ["long", "dark"],
+    correctIndex: 0
   },
   {
     target: "clean",
     ask: "Which is opposite to clean?",
-    script: 'Teacher: "Which is opposite to clean?"'
+    script: 'Teacher: "Which is opposite to clean?"',
+    choices: ["dirty", "stand up"],
+    correctIndex: 0
   },
   {
     target: "dirty",
     ask: "Which is opposite to dirty?",
-    script: 'Teacher: "Which is opposite to dirty?"'
+    script: 'Teacher: "Which is opposite to dirty?"',
+    choices: ["clean", "sit down"],
+    correctIndex: 0
   },
   {
     target: "bright",
     ask: "Which is opposite to bright?",
-    script: 'Teacher: "Which is opposite to bright?"'
+    script: 'Teacher: "Which is opposite to bright?"',
+    choices: ["dark", "short"],
+    correctIndex: 0
   },
   {
     target: "dark",
     ask: "Which is opposite to dark?",
-    script: 'Teacher: "Which is opposite to dark?"'
+    script: 'Teacher: "Which is opposite to dark?"',
+    choices: ["bright", "long"],
+    correctIndex: 0
   },
   {
     target: "stand up",
     ask: "Which is opposite to stand up?",
-    script: 'Teacher: "Which is opposite to stand up?"'
+    script: 'Teacher: "Which is opposite to stand up?"',
+    choices: ["sit down", "clean"],
+    correctIndex: 0
   },
   {
     target: "sit down",
     ask: "Which is opposite to sit down?",
-    script: 'Teacher: "Which is opposite to sit down?"'
+    script: 'Teacher: "Which is opposite to sit down?"',
+    choices: ["stand up", "dirty"],
+    correctIndex: 0
   }
 ];
 
@@ -289,7 +321,11 @@ function createWorkSlides({ startNumber, phase, stepId, modeLabel, list }) {
         title: `1問ずつ選ぶ ${index + 1}/8`,
         aim: "大カード1枚 + 候補2枚で、即時に答え合わせする。",
         script: item.script
-      }
+      },
+      ask: item.ask,
+      target: item.target,
+      choices: item.choices,
+      correctIndex: item.correctIndex
     };
   });
 }

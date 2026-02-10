@@ -249,6 +249,7 @@ body.week5-runner-page {
 
 .control-row.row-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .control-row.row-3 {
@@ -286,6 +287,20 @@ body.week5-runner-page {
 
 .btn.btn-reset {
   background: #6c7391;
+}
+
+.btn.btn-answer {
+  background: #5c668f;
+}
+
+.btn.btn-subnav {
+  background: #5b7aa8;
+}
+
+.control-row .btn:disabled {
+  background: #aeb3c8;
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .control-row .btn.hot {
@@ -553,7 +568,18 @@ body.embed-bigscreen .fullscreen-btn {
   border: 4px solid rgba(255, 255, 255, 0.82);
   border-radius: 28px;
   padding: 20px 24px;
-  transform: scale(0.8);
+  transform: scale(1);
+}
+
+.bigscreen-end-fx-label .winner {
+  background: linear-gradient(90deg, #ffd84a 0%, #8bff9a 32%, #7dd8ff 66%, #ff93d2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bigscreen-end-fx-label .plain {
+  color: #ffffff;
 }
 
 .bigscreen-end-fx.show {
@@ -571,12 +597,12 @@ body.embed-bigscreen .fullscreen-btn {
 
 @keyframes end-pop {
   0% {
-    opacity: 0.4;
-    transform: scale(0.72);
+    opacity: 0.2;
+    transform: scale(0.92);
   }
   25% {
     opacity: 1;
-    transform: scale(1.04);
+    transform: scale(1.03);
   }
   100% {
     opacity: 1;

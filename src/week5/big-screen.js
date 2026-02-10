@@ -24,7 +24,6 @@ let state = {
   updatedAt: 0
 };
 let pointFxTimer = null;
-let endFxTimer = null;
 let fxAudio = null;
 let endRollAudio = null;
 let endCymbalAudio = null;
@@ -33,6 +32,17 @@ let endIntroTimer = null;
 let hydratedFx = false;
 let lastFxId = "";
 let lastSlideId = "";
+let lastBeatSignalId = "";
+let latestBeatStep16 = 0;
+
+const END_ROLL_START_DELAY_MS = 3000;
+const END_CYMBAL_DELAY_MS = 1300;
+const DEEP_COMPARE_STEPS = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [0, 3]
+];
 
 function resolveAssetUrl(pathname) {
   const base = import.meta.env.BASE_URL || "/";
@@ -65,6 +75,8 @@ function render() {
   } else if (slide.kind !== "end") {
     clearEndFx();
   }
+
+  applySlideInteraction();
 }
 
 async function toggleFullscreen() {
@@ -163,9 +175,6 @@ function playPointFxSound(type) {
 }
 
 function playEndFanfare() {
-  if (isEmbed) {
-    return;
-  }
   if (!endRollAudio || !endCymbalAudio) {
     endRollAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_drum_roll.mp3"));
     endRollAudio.preload = "auto";
@@ -178,21 +187,23 @@ function playEndFanfare() {
     endAudioTimer = null;
   }
 
-  try {
-    endRollAudio.currentTime = 0;
-    const rollPromise = endRollAudio.play();
-    if (rollPromise && typeof rollPromise.catch === "function") {
-      rollPromise.catch(() => {});
+  if (!isEmbed) {
+    try {
+      endRollAudio.currentTime = 0;
+      const rollPromise = endRollAudio.play();
+      if (rollPromise && typeof rollPromise.catch === "function") {
+        rollPromise.catch(() => {});
+      }
+    } catch {
+      // no-op
     }
-  } catch {
-    // no-op
   }
 
   endAudioTimer = window.setTimeout(() => {
-    if (endRollAudio) {
+    if (!isEmbed && endRollAudio) {
       endRollAudio.pause();
     }
-    if (endCymbalAudio) {
+    if (!isEmbed && endCymbalAudio) {
       try {
         endCymbalAudio.currentTime = 0;
         const cymbalPromise = endCymbalAudio.play();
@@ -203,8 +214,35 @@ function playEndFanfare() {
         // no-op
       }
     }
+    revealEndFx();
     endAudioTimer = null;
-  }, 1300);
+  }, END_CYMBAL_DELAY_MS);
+}
+
+function buildScoreLine(label, score, isWinner) {
+  const cssClass = isWinner ? "winner" : "plain";
+  return `<span class="${cssClass}">${label}　${score}てん</span>`;
+}
+
+function revealEndFx() {
+  if (!endFx || !endFxLabel) {
+    return;
+  }
+  const student = Number(state.studentPoints ?? 0);
+  const teacher = Number(state.teacherPoints ?? 0);
+  const studentWin = student > teacher;
+  const teacherWin = teacher > student;
+
+  endFxLabel.innerHTML = [
+    "けっか　はっぴょう！",
+    "",
+    buildScoreLine("みんな", student, studentWin),
+    buildScoreLine("むつみせんせい", teacher, teacherWin)
+  ].join("<br>");
+
+  endFx.classList.remove("burst");
+  void endFx.offsetWidth;
+  endFx.classList.add("show", "burst");
 }
 
 function triggerPointFx(type, label) {
@@ -237,30 +275,16 @@ function triggerEndFx() {
   if (!endFx || !endFxLabel) {
     return;
   }
-  if (endFxTimer) {
-    window.clearTimeout(endFxTimer);
-    endFxTimer = null;
-  }
-
-  endFxLabel.innerHTML = `けっか はっぴょう！<br>みんな ${state.studentPoints ?? 0} てん<br>むつみせんせい ${state.teacherPoints ?? 0} てん`;
-  endFx.classList.remove("burst");
-  void endFx.offsetWidth;
-  endFx.classList.add("show", "burst");
-
-  endFxTimer = window.setTimeout(() => {
-    endFx.classList.remove("burst");
-    endFxTimer = null;
-  }, 2600);
-
   if (endIntroTimer) {
     window.clearTimeout(endIntroTimer);
     endIntroTimer = null;
   }
+  endFx.classList.remove("show", "burst");
 
   endIntroTimer = window.setTimeout(() => {
     playEndFanfare();
     endIntroTimer = null;
-  }, 500);
+  }, END_ROLL_START_DELAY_MS);
 }
 
 function clearEndFx() {
@@ -268,10 +292,6 @@ function clearEndFx() {
     return;
   }
   endFx.classList.remove("show", "burst");
-  if (endFxTimer) {
-    window.clearTimeout(endFxTimer);
-    endFxTimer = null;
-  }
   if (endAudioTimer) {
     window.clearTimeout(endAudioTimer);
     endAudioTimer = null;
@@ -337,8 +357,159 @@ function applyState(incoming) {
   render();
 }
 
+function getFrameDoc() {
+  if (!frame) {
+    return null;
+  }
+  return frame.contentDocument || null;
+}
+
+function ensureFrameLiveStyle(doc) {
+  if (!doc || doc.getElementById("week5-live-effects-style")) {
+    return;
+  }
+  const style = doc.createElement("style");
+  style.id = "week5-live-effects-style";
+  style.textContent = `
+    .option-card.live-selected {
+      box-shadow: 0 0 0 4px rgba(255, 79, 125, 0.22);
+      border-color: #ff4f7d !important;
+    }
+    .option-card.live-correct {
+      box-shadow: 0 0 0 4px rgba(62, 202, 130, 0.22);
+      border-color: #29b563 !important;
+    }
+    .option-card.live-wrong {
+      box-shadow: 0 0 0 4px rgba(235, 78, 98, 0.22);
+      border-color: #e24862 !important;
+    }
+    .option-card.live-pulse {
+      animation: live-pop 420ms ease-out;
+    }
+    .target-large.live-target-correct,
+    .focus-card.live-target-correct {
+      box-shadow: 0 0 0 5px rgba(62, 202, 130, 0.25);
+    }
+    .target-large.live-target-wrong,
+    .focus-card.live-target-wrong {
+      box-shadow: 0 0 0 5px rgba(235, 78, 98, 0.22);
+    }
+    .deep-item.live-highlight {
+      border-color: #ff4f7d !important;
+      box-shadow: 0 0 0 4px rgba(255, 79, 125, 0.24);
+    }
+    .flow-progress span.live-beat {
+      background: #fff38e !important;
+      box-shadow: 0 0 14px rgba(255, 241, 140, 0.78);
+    }
+    @keyframes live-pop {
+      0% { transform: scale(0.94); }
+      55% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+  `;
+  doc.head.appendChild(style);
+}
+
+function inferDefaultSubStep(slide) {
+  if (!slide || slide.kind !== "deep_compare") {
+    return 0;
+  }
+  const match = /deep_compare_(\d+)$/.exec(slide.id || "");
+  if (!match) {
+    return 0;
+  }
+  return Math.min(3, Math.max(0, Number(match[1]) - 1));
+}
+
+function applyBeatPulse(step16) {
+  const doc = getFrameDoc();
+  if (!doc) {
+    return;
+  }
+  const bars = Array.from(doc.querySelectorAll(".flow-progress span"));
+  if (!bars.length) {
+    return;
+  }
+  const active = step16 % bars.length;
+  bars.forEach((bar, idx) => {
+    bar.classList.toggle("live-beat", idx === active);
+  });
+}
+
+function applyWorkInteraction(doc, slide) {
+  if (!doc || slide.kind !== "work") {
+    return;
+  }
+  const interaction = state.slideInteractions?.[slide.id] || {};
+  const selectedChoice = Number.isFinite(interaction.selectedChoice) ? Number(interaction.selectedChoice) : null;
+  const cards = Array.from(doc.querySelectorAll(".option-card"));
+  const target = doc.querySelector(".target-large, .focus-card");
+  if (target) {
+    target.classList.remove("live-target-correct", "live-target-wrong");
+  }
+  cards.forEach((card, idx) => {
+    card.classList.remove("live-selected", "live-correct", "live-wrong", "live-pulse");
+    if (selectedChoice === null) {
+      return;
+    }
+    if (idx === selectedChoice) {
+      card.classList.add("live-selected", "live-pulse");
+    }
+    if (idx === slide.correctIndex) {
+      card.classList.add("live-correct");
+    }
+    if (idx === selectedChoice && selectedChoice !== slide.correctIndex) {
+      card.classList.add("live-wrong");
+    }
+  });
+  if (target && selectedChoice !== null) {
+    target.classList.add(selectedChoice === slide.correctIndex ? "live-target-correct" : "live-target-wrong");
+  }
+}
+
+function applyDeepCompareInteraction(doc, slide) {
+  if (!doc || slide.kind !== "deep_compare") {
+    return;
+  }
+  const interaction = state.slideInteractions?.[slide.id] || {};
+  const subStep = Number.isFinite(interaction.subStep)
+    ? Number(interaction.subStep)
+    : inferDefaultSubStep(slide);
+  const pair = DEEP_COMPARE_STEPS[((subStep % DEEP_COMPARE_STEPS.length) + DEEP_COMPARE_STEPS.length) % DEEP_COMPARE_STEPS.length];
+  const items = Array.from(doc.querySelectorAll(".deep-item"));
+  items.forEach((item, idx) => {
+    item.classList.toggle("live-highlight", pair.includes(idx));
+  });
+}
+
+function applySlideInteraction() {
+  const doc = getFrameDoc();
+  const slide = WEEK5_SLIDES[Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0))];
+  if (!doc || !slide) {
+    return;
+  }
+  ensureFrameLiveStyle(doc);
+  applyWorkInteraction(doc, slide);
+  applyDeepCompareInteraction(doc, slide);
+  applyBeatPulse(latestBeatStep16);
+}
+
 bus.onState((incoming) => {
   applyState(incoming);
+});
+
+bus.onSignal((signal) => {
+  if (!signal || signal.name !== "beat" || !signal.payload || signal.payload.id === lastBeatSignalId) {
+    return;
+  }
+  const slide = WEEK5_SLIDES[Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0))];
+  if (!slide || signal.payload.slideId !== slide.id) {
+    return;
+  }
+  lastBeatSignalId = signal.payload.id;
+  latestBeatStep16 = Number(signal.payload.step16) || 0;
+  applyBeatPulse(latestBeatStep16);
 });
 
 const latest = bus.getLatestState();
@@ -350,6 +521,12 @@ if (latest?.payload) {
 
 if (isEmbed) {
   document.body.classList.add("embed-bigscreen");
+}
+
+if (frame) {
+  frame.addEventListener("load", () => {
+    applySlideInteraction();
+  });
 }
 
 if (!isEmbed) {
@@ -365,6 +542,7 @@ if (!isEmbed) {
   window.setInterval(() => {
     bus.publishPresence("bigscreen");
   }, 1_500);
+  bus.publishPresence("bigscreen");
 }
 
 window.addEventListener("beforeunload", () => {

@@ -16,6 +16,7 @@ export class SessionBus {
         ? crypto.randomUUID()
         : `client-${Math.random().toString(36).slice(2)}`;
     this.storageKey = `${STORAGE_PREFIX}:${sessionId}:state`;
+    this.signalStorageKey = `${STORAGE_PREFIX}:${sessionId}:signal`;
     this.channelName = `${STORAGE_PREFIX}:${sessionId}:channel`;
     this.channel =
       typeof BroadcastChannel !== "undefined"
@@ -24,6 +25,7 @@ export class SessionBus {
 
     this.stateHandlers = new Set();
     this.presenceHandlers = new Set();
+    this.signalHandlers = new Set();
 
     this.handleStorage = this.handleStorage.bind(this);
     this.handleChannelMessage = this.handleChannelMessage.bind(this);
@@ -62,6 +64,18 @@ export class SessionBus {
     this.channel?.postMessage(envelope);
   }
 
+  publishSignal(name, payload = {}) {
+    const envelope = {
+      sender: this.clientId,
+      at: Date.now(),
+      type: "signal",
+      name,
+      payload
+    };
+    localStorage.setItem(this.signalStorageKey, JSON.stringify(envelope));
+    this.channel?.postMessage(envelope);
+  }
+
   onState(handler) {
     this.stateHandlers.add(handler);
     return () => this.stateHandlers.delete(handler);
@@ -72,15 +86,30 @@ export class SessionBus {
     return () => this.presenceHandlers.delete(handler);
   }
 
+  onSignal(handler) {
+    this.signalHandlers.add(handler);
+    return () => this.signalHandlers.delete(handler);
+  }
+
   handleStorage(event) {
-    if (event.key !== this.storageKey || !event.newValue) {
+    if (!event.newValue) {
       return;
     }
-    const envelope = safeParse(event.newValue);
-    if (!envelope || envelope.sender === this.clientId || envelope.type !== "state") {
+    if (event.key === this.storageKey) {
+      const envelope = safeParse(event.newValue);
+      if (!envelope || envelope.sender === this.clientId || envelope.type !== "state") {
+        return;
+      }
+      this.stateHandlers.forEach((handler) => handler(envelope.payload));
       return;
     }
-    this.stateHandlers.forEach((handler) => handler(envelope.payload));
+    if (event.key === this.signalStorageKey) {
+      const envelope = safeParse(event.newValue);
+      if (!envelope || envelope.sender === this.clientId || envelope.type !== "signal") {
+        return;
+      }
+      this.signalHandlers.forEach((handler) => handler(envelope));
+    }
   }
 
   handleChannelMessage(event) {
@@ -94,6 +123,10 @@ export class SessionBus {
     }
     if (envelope.type === "presence") {
       this.presenceHandlers.forEach((handler) => handler(envelope));
+      return;
+    }
+    if (envelope.type === "signal") {
+      this.signalHandlers.forEach((handler) => handler(envelope));
     }
   }
 
