@@ -14,7 +14,7 @@
 6. `/Users/yasuki/Documents/GitHub/幼児英語/docs/week5-bigscreen-flow.md`
 
 必須前提:
-- 第5週は49枚構成。
+- 第5週は43枚構成。
 - 進行は1問ごと前後移動。
 - 日本語パートはひらがな中心、英語パートは英語のみ。
 - 正解/不正解音は `mockup/assets/audio/correct.mp3`, `mockup/assets/audio/wrong.mp3` を使用。

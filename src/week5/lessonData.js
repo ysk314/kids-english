@@ -272,9 +272,9 @@ function createRhythmSummarySlide({ id, phase, stepId, modeLabel, bpm }) {
     bpm,
     modeLabel,
     screenPath: screenPath(id),
-    hint: {
-      title: `${modeLabel} まとめ 5/5`,
-      aim: phase === "jp" ? "4セットを続けて発話し、リズムを固定する。" : "4セットを英語で通し、テンポを維持する。",
+      hint: {
+        title: `${modeLabel} まとめ 4/4`,
+        aim: phase === "jp" ? "4セットを続けて発話し、リズムを固定する。" : "4セットを英語で通し、テンポを維持する。",
       script:
         phase === "jp"
           ? "せんせい「4せっと まとめて いってみよう」"
@@ -365,9 +365,10 @@ function createDeepStepSlides({ startNumber, phase, stepId, modeLabel }) {
 }
 
 function createDeepCompareSlides({ startNumber, phase, stepId, modeLabel, pairs, scriptPrefix, bpm }) {
-  return pairs.map((pair, index) => {
-    const id = `${startNumber}_${phase}_deep_compare_${index + 1}`;
-    return {
+  const id = `${startNumber}_${phase}_deep_compare_1`;
+  const firstPair = pairs[0];
+  return [
+    {
       id,
       phase,
       stepId,
@@ -376,15 +377,15 @@ function createDeepCompareSlides({ startNumber, phase, stepId, modeLabel, pairs,
       modeLabel,
       screenPath: screenPath(id),
       hint: {
-        title: `比較切替 ${index + 1}/4`,
-        aim: "赤枠の2枚を毎回変え、長短の相対性を定着させる。",
+        title: "比較切替 1/4（スライド内進行）",
+        aim: "赤枠の2枚をスライド内進行で切り替え、長短の相対性を定着させる。",
         script:
           phase === "jp"
-            ? `せんせい「こんどは ${pair} を くらべよう」`
-            : `${scriptPrefix} "Compare ${pair}. Which is long, which is short?"`
+            ? `せんせい「こんどは ${firstPair} を くらべよう」`
+            : `${scriptPrefix} "Compare ${firstPair}. Which is long, which is short?"`
       }
-    };
-  });
+    }
+  ];
 }
 
 export function buildWeek5Slides() {

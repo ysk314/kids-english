@@ -134,7 +134,7 @@ body.week5-runner-page {
   background: #fff;
   transform-origin: top left;
   transform: scale(var(--preview-scale, 1));
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .goal-panel {
@@ -287,10 +287,6 @@ body.week5-runner-page {
 
 .btn.btn-reset {
   background: #6c7391;
-}
-
-.btn.btn-answer {
-  background: #5c668f;
 }
 
 .btn.btn-subnav {
@@ -572,10 +568,11 @@ body.embed-bigscreen .fullscreen-btn {
 }
 
 .bigscreen-end-fx-label .winner {
-  background: linear-gradient(90deg, #ffd84a 0%, #8bff9a 32%, #7dd8ff 66%, #ff93d2 100%);
+  background: linear-gradient(90deg, #fff36d 0%, #9bff69 28%, #59fff2 58%, #8cc8ff 78%, #ff7ecf 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.42);
 }
 
 .bigscreen-end-fx-label .plain {

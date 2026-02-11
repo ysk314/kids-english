@@ -6,10 +6,10 @@ test.describe("week5 runner", () => {
   test("moves slide and updates points", async ({ page }) => {
     await page.goto(`/week5-runner.html?session=${encodeURIComponent(sid("e2e-runner"))}`);
 
-    await expect(page.getByTestId("slide-counter")).toHaveText("1 / 49");
+    await expect(page.getByTestId("slide-counter")).toHaveText("1 / 43");
 
     await page.getByTestId("next-btn").click();
-    await expect(page.getByTestId("slide-counter")).toHaveText("2 / 49");
+    await expect(page.getByTestId("slide-counter")).toHaveText("2 / 43");
 
     await page.getByTestId("student-point-btn").click();
     await expect(page.getByTestId("student-points")).toHaveText("1");
@@ -40,7 +40,7 @@ test.describe("week5 runner", () => {
     await runner.getByTestId("student-point-btn").click();
     await runner.getByTestId("teacher-point-btn").click();
 
-    await expect(big.getByTestId("bigscreen-count")).toHaveText("3 / 49");
+    await expect(big.getByTestId("bigscreen-count")).toHaveText("3 / 43");
     await expect(big.getByTestId("bigscreen-frame")).toHaveAttribute(
       "src",
       /12_jp_rhythm_2\.html/

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { FLOW_STEPS, LESSON_GOALS, WEEK5_SLIDES } from "../../src/week5/lessonData.js";
 
 describe("week5 lesson data", () => {
-  it("has exactly 49 slides including title, summary, break, and end slides", () => {
-    expect(WEEK5_SLIDES).toHaveLength(49);
+  it("has exactly 43 slides including title, summary, break, and end slides", () => {
+    expect(WEEK5_SLIDES).toHaveLength(43);
   });
 
   it("contains all required phase blocks", () => {
@@ -16,14 +16,14 @@ describe("week5 lesson data", () => {
     expect(countByPrefix("13_jp_work_")).toBe(8);
     expect(countByPrefix("13_jp_break_deep")).toBe(1);
     expect(countByPrefix("14_jp_deep_step_")).toBe(4);
-    expect(countByPrefix("15_jp_deep_compare_")).toBe(4);
+    expect(countByPrefix("15_jp_deep_compare_")).toBe(1);
     expect(countByPrefix("15_break_en_start")).toBe(1);
     expect(countByPrefix("16_en_rhythm_")).toBe(5);
     expect(countByPrefix("16_en_break_work")).toBe(1);
     expect(countByPrefix("17_en_work_")).toBe(8);
     expect(countByPrefix("17_en_break_deep")).toBe(1);
     expect(countByPrefix("18_en_deep_step_")).toBe(4);
-    expect(countByPrefix("19_en_deep_compare_")).toBe(4);
+    expect(countByPrefix("19_en_deep_compare_")).toBe(1);
     expect(countByPrefix("20_end")).toBe(1);
   });
 

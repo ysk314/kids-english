@@ -34,6 +34,7 @@ let lastFxId = "";
 let lastSlideId = "";
 let lastBeatSignalId = "";
 let latestBeatStep16 = 0;
+let lastEndRevealAt = null;
 
 const END_ROLL_START_DELAY_MS = 3000;
 const END_CYMBAL_DELAY_MS = 1300;
@@ -68,13 +69,7 @@ function render() {
   mirrorStatus.classList.add("hot");
   pointHeader.textContent = `みんな ${state.studentPoints ?? 0} / むつみ先生 ${state.teacherPoints ?? 0}`;
 
-  const previousSlideId = lastSlideId;
   lastSlideId = slide.id;
-  if (slide.kind === "end" && previousSlideId && previousSlideId !== slide.id) {
-    triggerEndFx();
-  } else if (slide.kind !== "end") {
-    clearEndFx();
-  }
 
   applySlideInteraction();
 }
@@ -402,6 +397,12 @@ function ensureFrameLiveStyle(doc) {
       background: #fff38e !important;
       box-shadow: 0 0 14px rgba(255, 241, 140, 0.78);
     }
+    .focus-card.live-kick {
+      border-color: #ffd95a !important;
+      box-shadow: 0 0 0 5px rgba(255, 217, 90, 0.28), 0 12px 24px rgba(19, 24, 47, 0.2);
+      transform: translateY(-2px) scale(1.015);
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    }
     @keyframes live-pop {
       0% { transform: scale(0.94); }
       55% { transform: scale(1.03); }
@@ -434,6 +435,38 @@ function applyBeatPulse(step16) {
   const active = step16 % bars.length;
   bars.forEach((bar, idx) => {
     bar.classList.toggle("live-beat", idx === active);
+  });
+}
+
+function clearBeatPulse(doc) {
+  if (!doc) {
+    return;
+  }
+  doc.querySelectorAll(".flow-progress span.live-beat").forEach((bar) => {
+    bar.classList.remove("live-beat");
+  });
+  doc.querySelectorAll(".focus-card.live-kick").forEach((card) => {
+    card.classList.remove("live-kick");
+  });
+}
+
+function applyRhythmKickEmphasis(doc, slide, step16) {
+  if (!doc || !slide || slide.kind !== "rhythm") {
+    return;
+  }
+  if (slide.id.includes("rhythm_summary")) {
+    doc.querySelectorAll(".focus-card.live-kick").forEach((card) => {
+      card.classList.remove("live-kick");
+    });
+    return;
+  }
+  const cards = Array.from(doc.querySelectorAll(".focus-card"));
+  if (cards.length < 2) {
+    return;
+  }
+  const activeIndex = step16 < 8 ? 0 : 1;
+  cards.forEach((card, idx) => {
+    card.classList.toggle("live-kick", idx === activeIndex);
   });
 }
 
@@ -492,7 +525,46 @@ function applySlideInteraction() {
   ensureFrameLiveStyle(doc);
   applyWorkInteraction(doc, slide);
   applyDeepCompareInteraction(doc, slide);
-  applyBeatPulse(latestBeatStep16);
+  if (slide.kind === "rhythm" || slide.kind === "deep_compare") {
+    applyBeatPulse(latestBeatStep16);
+    applyRhythmKickEmphasis(doc, slide, latestBeatStep16);
+  } else {
+    clearBeatPulse(doc);
+  }
+
+  if (slide.kind === "end") {
+    const interaction = state.slideInteractions?.[slide.id] || {};
+    if (interaction.endRevealAt && interaction.endRevealAt !== lastEndRevealAt) {
+      revealEndFx();
+      lastEndRevealAt = interaction.endRevealAt;
+    } else if (!interaction.endRevealAt) {
+      clearEndFx();
+      lastEndRevealAt = null;
+    }
+  } else {
+    clearEndFx();
+    lastEndRevealAt = null;
+  }
+}
+
+function bindWorkTapInteraction() {
+  const doc = getFrameDoc();
+  const slide = WEEK5_SLIDES[Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0))];
+  if (!doc || !slide || slide.kind !== "work") {
+    return;
+  }
+  const options = Array.from(doc.querySelectorAll(".option-card"));
+  options.forEach((option, idx) => {
+    option.style.cursor = "pointer";
+    option.onclick = null;
+    option.addEventListener("click", () => {
+      bus.publishSignal("work-choice", {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+        slideId: slide.id,
+        choiceIndex: idx
+      });
+    });
+  });
 }
 
 bus.onState((incoming) => {
@@ -509,7 +581,14 @@ bus.onSignal((signal) => {
   }
   lastBeatSignalId = signal.payload.id;
   latestBeatStep16 = Number(signal.payload.step16) || 0;
-  applyBeatPulse(latestBeatStep16);
+  const doc = getFrameDoc();
+  if (!doc) {
+    return;
+  }
+  if (slide.kind === "rhythm" || slide.kind === "deep_compare") {
+    applyBeatPulse(latestBeatStep16);
+    applyRhythmKickEmphasis(doc, slide, latestBeatStep16);
+  }
 });
 
 const latest = bus.getLatestState();
@@ -526,6 +605,7 @@ if (isEmbed) {
 if (frame) {
   frame.addEventListener("load", () => {
     applySlideInteraction();
+    bindWorkTapInteraction();
   });
 }
 

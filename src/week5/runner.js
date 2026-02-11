@@ -125,8 +125,6 @@ const elements = {
   resetPointsButton: document.querySelector("[data-testid='reset-points-btn']"),
   openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
   soundButton: document.querySelector("[data-testid='sound-btn']"),
-  answerAButton: document.querySelector("[data-testid='answer-0-btn']"),
-  answerBButton: document.querySelector("[data-testid='answer-1-btn']"),
   subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
   subNextButton: document.querySelector("[data-testid='sub-next-btn']")
 };
@@ -134,6 +132,13 @@ const elements = {
 let activeHintButton = null;
 let mirrorLastSeenAt = 0;
 let audioReady = false;
+let lastRenderedSlideId = "";
+let beatSignalTimer = null;
+let beatSignalStep = 0;
+let beatSignalKey = "";
+let endRevealTimer = null;
+const END_CYMBAL_DELAY_MS = 1300;
+let beatListenerBound = false;
 const BIGSCREEN_BASE_WIDTH = 1512;
 const BIGSCREEN_BASE_HEIGHT = 982;
 
@@ -181,6 +186,9 @@ function getSlideInteraction(slideId) {
 function getSubStepMax(slide) {
   if (slide.kind === "deep_compare") {
     return 4;
+  }
+  if (slide.kind === "end") {
+    return 2;
   }
   return 0;
 }
@@ -291,22 +299,20 @@ function updateScore() {
 }
 
 function updateSlideActionButtons(slide) {
-  const isWork = slide.kind === "work" && Array.isArray(slide.choices) && slide.choices.length >= 2;
-  if (elements.answerAButton && elements.answerBButton) {
-    elements.answerAButton.disabled = !isWork;
-    elements.answerBButton.disabled = !isWork;
-    elements.answerAButton.textContent = isWork ? `候補1: ${slide.choices[0]}` : "候補1";
-    elements.answerBButton.textContent = isWork ? `候補2: ${slide.choices[1]}` : "候補2";
-  }
-
   const maxStep = getSubStepMax(slide);
   const hasSubStep = maxStep > 0;
   const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
   if (elements.subPrevButton && elements.subNextButton) {
     elements.subPrevButton.disabled = !hasSubStep && state.slideIndex <= 0;
     elements.subNextButton.disabled = !hasSubStep && state.slideIndex >= WEEK5_SLIDES.length - 1;
-    elements.subPrevButton.textContent = hasSubStep ? `◀ スライド内 ${currentStep + 1}/${maxStep}` : "◀ スライド内";
-    elements.subNextButton.textContent = hasSubStep ? `スライド内 ${currentStep + 1}/${maxStep} ▶` : "スライド内 ▶";
+    if (slide.kind === "end") {
+      elements.subPrevButton.textContent = `◀ スライド内 ${Math.min(currentStep + 1, maxStep)}/${maxStep}`;
+      elements.subNextButton.textContent = currentStep > 0 ? "演出ずみ" : "けっかはっぴょう ▶";
+      elements.subNextButton.disabled = currentStep > 0;
+    } else {
+      elements.subPrevButton.textContent = hasSubStep ? `◀ スライド内 ${currentStep + 1}/${maxStep}` : "◀ スライド内";
+      elements.subNextButton.textContent = hasSubStep ? `スライド内 ${currentStep + 1}/${maxStep} ▶` : "スライド内 ▶";
+    }
   }
 }
 
@@ -353,6 +359,52 @@ function applyAudioBySlide(slide) {
   }
 }
 
+function stopBeatSignal() {
+  if (beatSignalTimer) {
+    window.clearInterval(beatSignalTimer);
+    beatSignalTimer = null;
+  }
+}
+
+function publishBeatSignal(step16, bpm, slideId) {
+  bus.publishSignal("beat", {
+    id: `${Date.now()}-${step16}`,
+    step16: step16 % 16,
+    bpm,
+    slideId
+  });
+}
+
+function syncBeatSignalBySlide(slide) {
+  const bpm = typeof slide.bpm === "number" && slide.bpm > 0 ? slide.bpm : null;
+  if (!bpm) {
+    stopBeatSignal();
+    beatSignalKey = "";
+    return;
+  }
+
+  const key = `${slide.id}:${bpm}`;
+  if (beatSignalKey === key && (beatSignalTimer || audioReady)) {
+    return;
+  }
+
+  beatSignalKey = key;
+  beatSignalStep = 0;
+  publishBeatSignal(0, bpm, slide.id);
+
+  if (audioReady) {
+    stopBeatSignal();
+    return;
+  }
+
+  stopBeatSignal();
+  const intervalMs = Math.max(30, Math.floor(60_000 / bpm / 4));
+  beatSignalTimer = window.setInterval(() => {
+    publishBeatSignal(beatSignalStep, bpm, slide.id);
+    beatSignalStep += 1;
+  }, intervalMs);
+}
+
 function setSlideInteraction(slideId, patch) {
   const prev = getSlideInteraction(slideId);
   return {
@@ -366,6 +418,11 @@ function setSlideInteraction(slideId, patch) {
 
 function render() {
   const slide = currentSlide();
+  if (slide.kind !== "end" && endRevealTimer) {
+    window.clearTimeout(endRevealTimer);
+    endRevealTimer = null;
+  }
+  lastRenderedSlideId = slide.id;
   elements.slideCounter.textContent = `${state.slideIndex + 1} / ${WEEK5_SLIDES.length}`;
   updateFlowHighlight(slide);
   updateHintPanel(slide);
@@ -377,6 +434,7 @@ function render() {
   updateMirrorChip();
   updateSoundButtons();
   applyAudioBySlide(slide);
+  syncBeatSignalBySlide(slide);
   fitPreviewScale();
 }
 
@@ -401,7 +459,9 @@ async function ensureAudioReady() {
   }
   audioReady = await audio.unlock();
   if (audioReady) {
+    stopBeatSignal();
     applyAudioBySlide(currentSlide());
+    syncBeatSignalBySlide(currentSlide());
   }
   updateSoundButtons();
 }
@@ -449,6 +509,38 @@ async function goSubNext() {
     return;
   }
   await ensureAudioReady();
+  if (slide.kind === "end") {
+    const currentStep = Number(getSlideInteraction(slide.id).subStep ?? 0);
+    if (currentStep > 0) {
+      return;
+    }
+    audio.playEndFanfare();
+    if (endRevealTimer) {
+      window.clearTimeout(endRevealTimer);
+      endRevealTimer = null;
+    }
+    setState({
+      slideInteractions: setSlideInteraction(slide.id, {
+        subStep: 1,
+        endRevealAt: null
+      })
+    });
+    endRevealTimer = window.setTimeout(() => {
+      const current = currentSlide();
+      if (!current || current.id !== slide.id) {
+        return;
+      }
+      setState({
+        slideInteractions: setSlideInteraction(slide.id, {
+          subStep: 1,
+          endRevealAt: nowMs()
+        })
+      });
+      endRevealTimer = null;
+    }, END_CYMBAL_DELAY_MS);
+    return;
+  }
+
   const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
   if (currentStep >= maxStep - 1) {
     await goNext();
@@ -470,6 +562,19 @@ async function goSubPrev() {
     return;
   }
   await ensureAudioReady();
+  if (slide.kind === "end") {
+    if (endRevealTimer) {
+      window.clearTimeout(endRevealTimer);
+      endRevealTimer = null;
+    }
+    setState({
+      slideInteractions: setSlideInteraction(slide.id, {
+        subStep: 0,
+        endRevealAt: null
+      })
+    });
+    return;
+  }
   const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
   if (currentStep <= 0) {
     await goPrev();
@@ -602,14 +707,6 @@ async function setupControls() {
     });
   }
 
-  if (elements.answerAButton) {
-    elements.answerAButton.addEventListener("click", () => submitWorkChoice(0));
-  }
-
-  if (elements.answerBButton) {
-    elements.answerBButton.addEventListener("click", () => submitWorkChoice(1));
-  }
-
   if (elements.subPrevButton) {
     elements.subPrevButton.addEventListener("click", goSubPrev);
   }
@@ -645,19 +742,20 @@ async function setupControls() {
   });
 
   window.addEventListener("keydown", handleArrowKey);
-
-  audio.onBeat((beat) => {
-    const slide = currentSlide();
-    if (typeof slide.bpm !== "number" || !state.bgmEnabled) {
-      return;
-    }
-    bus.publishSignal("beat", {
-      id: `${beat.at}-${beat.step16}`,
-      step16: beat.step16,
-      bpm: beat.bpm,
-      slideId: slide.id
+  if (!beatListenerBound) {
+    audio.onBeat((beat) => {
+      if (!audioReady) {
+        return;
+      }
+      const slide = currentSlide();
+      if (!slide || typeof slide.bpm !== "number" || slide.bpm <= 0) {
+        return;
+      }
+      publishBeatSignal(beat.step16, beat.bpm, slide.id);
     });
-  });
+    beatListenerBound = true;
+  }
+
 }
 
 function setupRealtimeSync() {
@@ -679,6 +777,21 @@ function setupRealtimeSync() {
     }
     mirrorLastSeenAt = nowMs();
     updateMirrorChip();
+  });
+
+  bus.onSignal((signal) => {
+    if (!signal || signal.name !== "work-choice") {
+      return;
+    }
+    const payload = signal.payload || {};
+    const slide = currentSlide();
+    if (slide.kind !== "work" || payload.slideId !== slide.id) {
+      return;
+    }
+    if (payload.choiceIndex !== 0 && payload.choiceIndex !== 1) {
+      return;
+    }
+    submitWorkChoice(payload.choiceIndex);
   });
 
   window.setInterval(() => {
@@ -713,6 +826,11 @@ function bootstrap() {
 bootstrap();
 
 window.addEventListener("beforeunload", () => {
+  if (endRevealTimer) {
+    window.clearTimeout(endRevealTimer);
+    endRevealTimer = null;
+  }
+  stopBeatSignal();
   window.removeEventListener("resize", fitRunnerScale);
   window.removeEventListener("keydown", handleArrowKey);
   audio.destroy();

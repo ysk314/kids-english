@@ -307,7 +307,7 @@ function renderRhythmSummary(pairs, mode) {
     .join("");
 
   const body = `
-      ${progressDots(5, 4)}
+      ${progressDots(4, 3)}
       <div class="pair-summary-grid">${rows}</div>
   `;
 

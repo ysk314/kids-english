@@ -14,23 +14,26 @@
 
 ## 3. 主要モジュール
 - `src/week5/lessonData.js`
-  - 49スライド定義
+  - 43スライド定義
   - フローステップ
   - 授業ねらい
   - 講師ヒント（タイトル/ねらい/セリフ）
 
 - `src/week5/runner.js`
   - 進行制御（前へ/次へ、スライドジャンプ）
+  - スライド内進行（◀/▶）
   - 講師コントローラー処理
   - タイマー表示
   - 点数リセット
   - 正解/不正解・加点イベント送信
+  - プレビュー内タップ回答の受信処理
 
 - `src/week5/big-screen.js`
   - スライド受信表示
   - ポイント表示（みんな / むつみ先生）
   - エフェクト表示（+1 / ◯ / ×）
   - End演出（得点発表 + 花吹雪風演出）
+  - BPM同期ビジュアル（拍バー + リズムカード強調）
   - 全画面切り替え
 
 - `src/week5/audioEngine.js`
@@ -40,7 +43,7 @@
   - deep_compareスライドでもドラム継続
 
 - `src/week5/sessionBus.js`
-  - 状態同期とPresence通知
+  - 状態同期、Presence通知、beat/work-choiceシグナル通知
 
 - `src/week5/styles.css`
   - ランナー/大画面共通と専用スタイル
@@ -53,8 +56,15 @@
 - `bgmEnabled`
 - `fxEvent`（`student` `teacher` `correct` `incorrect`）
 - `updatedAt`
+- `slideInteractions`（回答・スライド内進行状態）
 
 `fxEvent` はID付きで送信し、受信側で重複抑止する。
+`signal` は `beat` / `work-choice` を用途別に送信する。
+
+## 5.1 操作用語定義
+- `前へ / 次へ`: スライド移動（ページ切替）
+- `◀ スライド内 / スライド内 ▶`: スライド内進行（同一スライドの段階進行）
+- Endの `スライド内 ▶`: 結果発表トリガー（結果表示はシンバル音タイミング）
 
 ## 5. 音仕様
 - 正解音: `mockup/assets/audio/correct.mp3`

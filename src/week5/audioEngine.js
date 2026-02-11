@@ -14,6 +14,9 @@ export class Week5AudioEngine {
     this.noiseBuffer = null;
     this.correctAudio = null;
     this.wrongAudio = null;
+    this.endRollAudio = null;
+    this.endCymbalAudio = null;
+    this.endFanfareTimer = null;
     this.enabled = false;
     this.bgmEnabled = true;
     this.bgmTimer = null;
@@ -161,6 +164,49 @@ export class Week5AudioEngine {
       return;
     }
     this.playTone(840, 0.06, 0.01, "square", 0.05);
+  }
+
+  playEndFanfare() {
+    if (!this.enabled) {
+      return;
+    }
+    this.setupEndClips();
+    if (!this.endRollAudio || !this.endCymbalAudio) {
+      return;
+    }
+
+    if (this.endFanfareTimer) {
+      window.clearTimeout(this.endFanfareTimer);
+      this.endFanfareTimer = null;
+    }
+
+    try {
+      this.endRollAudio.currentTime = 0;
+      const rollPromise = this.endRollAudio.play();
+      if (rollPromise && typeof rollPromise.catch === "function") {
+        rollPromise.catch(() => {});
+      }
+    } catch {
+      // no-op
+    }
+
+    this.endFanfareTimer = window.setTimeout(() => {
+      if (this.endRollAudio) {
+        this.endRollAudio.pause();
+      }
+      if (this.endCymbalAudio) {
+        try {
+          this.endCymbalAudio.currentTime = 0;
+          const cymbalPromise = this.endCymbalAudio.play();
+          if (cymbalPromise && typeof cymbalPromise.catch === "function") {
+            cymbalPromise.catch(() => {});
+          }
+        } catch {
+          // no-op
+        }
+      }
+      this.endFanfareTimer = null;
+    }, 1300);
   }
 
   startBgm() {
@@ -334,6 +380,16 @@ export class Week5AudioEngine {
     this.wrongAudio.preload = "auto";
   }
 
+  setupEndClips() {
+    if (this.endRollAudio && this.endCymbalAudio) {
+      return;
+    }
+    this.endRollAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_drum_roll.mp3"));
+    this.endRollAudio.preload = "auto";
+    this.endCymbalAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_cymbal.mp3"));
+    this.endCymbalAudio.preload = "auto";
+  }
+
   playClip(audio) {
     if (!audio) {
       return;
@@ -353,6 +409,16 @@ export class Week5AudioEngine {
   destroy() {
     this.stopBgm();
     this.stopMetronome();
+    if (this.endFanfareTimer) {
+      window.clearTimeout(this.endFanfareTimer);
+      this.endFanfareTimer = null;
+    }
+    if (this.endRollAudio) {
+      this.endRollAudio.pause();
+    }
+    if (this.endCymbalAudio) {
+      this.endCymbalAudio.pause();
+    }
 
     if (this.context) {
       this.context.close().catch(noOp);
@@ -363,6 +429,8 @@ export class Week5AudioEngine {
     this.noiseBuffer = null;
     this.correctAudio = null;
     this.wrongAudio = null;
+    this.endRollAudio = null;
+    this.endCymbalAudio = null;
     this.beatListeners.clear();
     this.enabled = false;
   }

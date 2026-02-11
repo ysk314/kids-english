@@ -30,7 +30,7 @@
   - `week5-runner.html`
   - `week5-big-screen.html`
   - スライド同期
-  - 49枚進行
+  - 43枚進行
 
 ### M3 音/演出調整
 - 状態: 完了（継続微調整可）
