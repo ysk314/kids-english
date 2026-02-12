@@ -13,7 +13,9 @@ const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("session") || defaultSessionId();
 const initialSlideId = params.get("slide");
 
-const bus = new SessionBus(sessionId);
+const bus = new SessionBus(sessionId, {
+  role: "runner"
+});
 const audio = new Week5AudioEngine();
 
 const fallbackState = {
@@ -22,9 +24,9 @@ const fallbackState = {
   teacherPoints: 0,
   slideInteractions: {},
   bgmEnabled: true,
-  timerRunning: true,
+  timerRunning: false,
   timerOffsetSec: 0,
-  timerStartedAt: nowMs(),
+  timerStartedAt: null,
   updatedAt: nowMs()
 };
 
@@ -62,9 +64,9 @@ function normalizeTimerState(rawState) {
       normalized.timerRunning = migratedElapsed < LESSON_DURATION_SECONDS;
       normalized.timerStartedAt = normalized.timerRunning ? now : null;
     } else {
-      normalized.timerRunning = true;
+      normalized.timerRunning = false;
       normalized.timerOffsetSec = 0;
-      normalized.timerStartedAt = now;
+      normalized.timerStartedAt = null;
     }
   }
 
@@ -100,8 +102,7 @@ const elements = {
   mirrorChip: document.querySelector("[data-role='mirror-chip']"),
   slideCounter: document.querySelector("[data-testid='slide-counter']"),
   timer: document.querySelector("[data-testid='lesson-timer']"),
-  timerStartButton: document.querySelector("[data-testid='timer-start-btn']"),
-  timerStopButton: document.querySelector("[data-testid='timer-stop-btn']"),
+  timerToggleButton: document.querySelector("[data-testid='timer-toggle-btn']"),
   timerResetButton: document.querySelector("[data-testid='timer-reset-btn']"),
   flowSteps: document.querySelector("[data-role='flow-steps']"),
   goals: document.querySelector("[data-role='goal-grid']"),
@@ -280,12 +281,12 @@ function updateTimer() {
 }
 
 function updateTimerButtons() {
-  if (!elements.timerStartButton || !elements.timerStopButton || !elements.timerResetButton) {
+  if (!elements.timerToggleButton || !elements.timerResetButton) {
     return;
   }
 
-  elements.timerStartButton.classList.toggle("active", state.timerRunning);
-  elements.timerStopButton.classList.toggle("active", !state.timerRunning);
+  elements.timerToggleButton.classList.toggle("active", state.timerRunning);
+  elements.timerToggleButton.textContent = state.timerRunning ? "一時停止⏸️" : "スタート▶︎";
   elements.timerResetButton.classList.remove("active");
 }
 
@@ -621,7 +622,7 @@ async function startOrResumeTimer() {
   });
 }
 
-async function stopTimer() {
+async function pauseTimer() {
   await ensureAudioReady();
   audio.playToggle();
   setState({
@@ -629,6 +630,14 @@ async function stopTimer() {
     timerRunning: false,
     timerStartedAt: null
   });
+}
+
+async function toggleTimer() {
+  if (state.timerRunning) {
+    await pauseTimer();
+    return;
+  }
+  await startOrResumeTimer();
 }
 
 async function resetTimer() {
@@ -682,11 +691,8 @@ async function setupControls() {
 
   elements.prevButton.addEventListener("click", goPrev);
 
-  if (elements.timerStartButton) {
-    elements.timerStartButton.addEventListener("click", startOrResumeTimer);
-  }
-  if (elements.timerStopButton) {
-    elements.timerStopButton.addEventListener("click", stopTimer);
+  if (elements.timerToggleButton) {
+    elements.timerToggleButton.addEventListener("click", toggleTimer);
   }
   if (elements.timerResetButton) {
     elements.timerResetButton.addEventListener("click", resetTimer);

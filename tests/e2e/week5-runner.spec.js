@@ -51,24 +51,25 @@ test.describe("week5 runner", () => {
     await context.close();
   });
 
-  test("supports timer start stop and reset controls", async ({ page }) => {
+  test("supports timer toggle and reset controls", async ({ page }) => {
     await page.goto(`/week5-runner.html?session=${encodeURIComponent(sid("e2e-timer"))}`);
 
-    await page.waitForTimeout(1200);
-    const runningValue = await page.getByTestId("lesson-timer").textContent();
-    expect(runningValue).not.toBe("00:00 / 45:00");
-
-    await page.getByTestId("timer-stop-btn").click();
-    const stoppedValue = await page.getByTestId("lesson-timer").textContent();
-    await page.waitForTimeout(1200);
-    await expect(page.getByTestId("lesson-timer")).toHaveText(stoppedValue ?? "00:00 / 45:00");
-
-    await page.getByTestId("timer-reset-btn").click();
+    await expect(page.getByTestId("timer-toggle-btn")).toHaveText("スタート▶︎");
     await expect(page.getByTestId("lesson-timer")).toHaveText("00:00 / 45:00");
 
-    await page.getByTestId("timer-start-btn").click();
+    await page.getByTestId("timer-toggle-btn").click();
+    await expect(page.getByTestId("timer-toggle-btn")).toHaveText("一時停止⏸️");
     await expect.poll(async () => page.getByTestId("lesson-timer").textContent()).not.toBe(
       "00:00 / 45:00"
     );
+
+    await page.getByTestId("timer-toggle-btn").click();
+    await expect(page.getByTestId("timer-toggle-btn")).toHaveText("スタート▶︎");
+    const pausedValue = await page.getByTestId("lesson-timer").textContent();
+    await page.waitForTimeout(1200);
+    await expect(page.getByTestId("lesson-timer")).toHaveText(pausedValue ?? "00:00 / 45:00");
+
+    await page.getByTestId("timer-reset-btn").click();
+    await expect(page.getByTestId("lesson-timer")).toHaveText("00:00 / 45:00");
   });
 });

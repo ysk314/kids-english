@@ -1,4 +1,6 @@
 const STORAGE_PREFIX = "yoji-week5-session";
+const REMOTE_RECONNECT_DELAY_MS = 1500;
+const PEERJS_CDN_URL = "https://esm.sh/peerjs@1.5.5?bundle";
 
 function safeParse(jsonText) {
   try {
@@ -8,9 +10,38 @@ function safeParse(jsonText) {
   }
 }
 
+function sanitizeSessionId(sessionId) {
+  return String(sessionId || "week5-main")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 40);
+}
+
+function buildRunnerPeerId(sessionId) {
+  return `${STORAGE_PREFIX}-${sanitizeSessionId(sessionId)}-runner`;
+}
+
+async function loadPeerConstructor() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  if (typeof window.Peer === "function") {
+    return window.Peer;
+  }
+  try {
+    const mod = await import(/* @vite-ignore */ PEERJS_CDN_URL);
+    return mod?.default || mod?.Peer || null;
+  } catch {
+    return null;
+  }
+}
+
 export class SessionBus {
-  constructor(sessionId) {
+  constructor(sessionId, options = {}) {
     this.sessionId = sessionId;
+    this.role = options.role === "bigscreen" ? "bigscreen" : "runner";
+    this.remoteEnabled = options.remoteEnabled !== false;
     this.clientId =
       typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
@@ -22,6 +53,12 @@ export class SessionBus {
       typeof BroadcastChannel !== "undefined"
         ? new BroadcastChannel(this.channelName)
         : null;
+    this.runnerPeerId = buildRunnerPeerId(sessionId);
+    this.peer = null;
+    this.peerReady = false;
+    this.runnerConnections = new Map();
+    this.remoteConnection = null;
+    this.reconnectTimer = null;
 
     this.stateHandlers = new Set();
     this.presenceHandlers = new Set();
@@ -32,6 +69,10 @@ export class SessionBus {
 
     window.addEventListener("storage", this.handleStorage);
     this.channel?.addEventListener("message", this.handleChannelMessage);
+
+    if (this.remoteEnabled) {
+      this.setupRemoteSync().catch(() => {});
+    }
   }
 
   getLatestState() {
@@ -52,6 +93,7 @@ export class SessionBus {
     };
     localStorage.setItem(this.storageKey, JSON.stringify(envelope));
     this.channel?.postMessage(envelope);
+    this.broadcastRemote(envelope);
   }
 
   publishPresence(role) {
@@ -62,6 +104,7 @@ export class SessionBus {
       role
     };
     this.channel?.postMessage(envelope);
+    this.broadcastRemote(envelope);
   }
 
   publishSignal(name, payload = {}) {
@@ -74,6 +117,7 @@ export class SessionBus {
     };
     localStorage.setItem(this.signalStorageKey, JSON.stringify(envelope));
     this.channel?.postMessage(envelope);
+    this.broadcastRemote(envelope);
   }
 
   onState(handler) {
@@ -100,7 +144,7 @@ export class SessionBus {
       if (!envelope || envelope.sender === this.clientId || envelope.type !== "state") {
         return;
       }
-      this.stateHandlers.forEach((handler) => handler(envelope.payload));
+      this.dispatchEnvelope(envelope);
       return;
     }
     if (event.key === this.signalStorageKey) {
@@ -108,7 +152,7 @@ export class SessionBus {
       if (!envelope || envelope.sender === this.clientId || envelope.type !== "signal") {
         return;
       }
-      this.signalHandlers.forEach((handler) => handler(envelope));
+      this.dispatchEnvelope(envelope);
     }
   }
 
@@ -117,6 +161,10 @@ export class SessionBus {
     if (!envelope || envelope.sender === this.clientId) {
       return;
     }
+    this.dispatchEnvelope(envelope);
+  }
+
+  dispatchEnvelope(envelope) {
     if (envelope.type === "state") {
       this.stateHandlers.forEach((handler) => handler(envelope.payload));
       return;
@@ -130,10 +178,205 @@ export class SessionBus {
     }
   }
 
+  async setupRemoteSync() {
+    const PeerCtor = await loadPeerConstructor();
+    if (!PeerCtor) {
+      this.remoteEnabled = false;
+      return;
+    }
+
+    const peerId = this.role === "runner" ? this.runnerPeerId : undefined;
+    this.peer = new PeerCtor(peerId);
+
+    this.peer.on("open", () => {
+      this.peerReady = true;
+      if (this.role === "bigscreen") {
+        this.connectToRunner();
+      }
+    });
+
+    this.peer.on("connection", (connection) => {
+      if (this.role !== "runner") {
+        connection.close();
+        return;
+      }
+      this.attachRunnerConnection(connection);
+    });
+
+    this.peer.on("disconnected", () => {
+      this.peerReady = false;
+      if (this.role === "bigscreen") {
+        this.scheduleReconnect();
+      }
+    });
+
+    this.peer.on("close", () => {
+      this.peerReady = false;
+      if (this.role === "bigscreen") {
+        this.scheduleReconnect();
+      }
+    });
+
+    this.peer.on("error", () => {
+      if (this.role === "bigscreen") {
+        this.scheduleReconnect();
+      }
+    });
+  }
+
+  attachRunnerConnection(connection) {
+    connection.on("open", () => {
+      this.runnerConnections.set(connection.peer, connection);
+      const latest = this.getLatestState();
+      if (latest?.type === "state") {
+        try {
+          connection.send(latest);
+        } catch {
+          // no-op
+        }
+      }
+    });
+
+    connection.on("data", (rawEnvelope) => {
+      this.handleRemoteEnvelope(rawEnvelope);
+    });
+
+    const cleanup = () => {
+      this.runnerConnections.delete(connection.peer);
+    };
+    connection.on("close", cleanup);
+    connection.on("error", cleanup);
+  }
+
+  connectToRunner() {
+    if (!this.peer || !this.peerReady) {
+      this.scheduleReconnect();
+      return;
+    }
+    if (this.remoteConnection?.open) {
+      return;
+    }
+
+    const connection = this.peer.connect(this.runnerPeerId, {
+      reliable: true
+    });
+    this.remoteConnection = connection;
+
+    connection.on("open", () => {
+      this.clearReconnectTimer();
+    });
+
+    connection.on("data", (rawEnvelope) => {
+      this.handleRemoteEnvelope(rawEnvelope);
+    });
+
+    const recover = () => {
+      if (this.remoteConnection === connection) {
+        this.remoteConnection = null;
+      }
+      this.scheduleReconnect();
+    };
+    connection.on("close", recover);
+    connection.on("error", recover);
+  }
+
+  scheduleReconnect() {
+    if (this.role !== "bigscreen" || this.reconnectTimer) {
+      return;
+    }
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
+      if (!this.peer) {
+        return;
+      }
+      if (this.peer.disconnected && typeof this.peer.reconnect === "function") {
+        try {
+          this.peer.reconnect();
+        } catch {
+          // no-op
+        }
+      }
+      this.connectToRunner();
+    }, REMOTE_RECONNECT_DELAY_MS);
+  }
+
+  clearReconnectTimer() {
+    if (!this.reconnectTimer) {
+      return;
+    }
+    window.clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+  }
+
+  broadcastRemote(envelope) {
+    if (!this.remoteEnabled || !envelope) {
+      return;
+    }
+
+    if (this.role === "runner") {
+      this.runnerConnections.forEach((connection) => {
+        if (!connection?.open) {
+          return;
+        }
+        try {
+          connection.send(envelope);
+        } catch {
+          // no-op
+        }
+      });
+      return;
+    }
+
+    if (!this.remoteConnection?.open) {
+      return;
+    }
+    try {
+      this.remoteConnection.send(envelope);
+    } catch {
+      // no-op
+    }
+  }
+
+  handleRemoteEnvelope(rawEnvelope) {
+    const envelope =
+      rawEnvelope && typeof rawEnvelope === "string" ? safeParse(rawEnvelope) : rawEnvelope;
+    if (!envelope || typeof envelope !== "object") {
+      return;
+    }
+    if (envelope.sender === this.clientId) {
+      return;
+    }
+
+    if (envelope.type === "state") {
+      localStorage.setItem(this.storageKey, JSON.stringify(envelope));
+    } else if (envelope.type === "signal") {
+      localStorage.setItem(this.signalStorageKey, JSON.stringify(envelope));
+    }
+    this.channel?.postMessage(envelope);
+    this.dispatchEnvelope(envelope);
+  }
+
   close() {
     window.removeEventListener("storage", this.handleStorage);
     this.channel?.removeEventListener("message", this.handleChannelMessage);
     this.channel?.close();
+    this.clearReconnectTimer();
+    if (this.remoteConnection) {
+      this.remoteConnection.close();
+      this.remoteConnection = null;
+    }
+    this.runnerConnections.forEach((connection) => {
+      try {
+        connection.close();
+      } catch {
+        // no-op
+      }
+    });
+    this.runnerConnections.clear();
+    if (this.peer) {
+      this.peer.destroy();
+      this.peer = null;
+    }
   }
 }
 

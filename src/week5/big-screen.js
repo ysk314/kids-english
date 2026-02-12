@@ -5,7 +5,10 @@ const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("session") || defaultSessionId();
 const isEmbed = params.get("embed") === "1";
 
-const bus = new SessionBus(sessionId);
+const bus = new SessionBus(sessionId, {
+  role: "bigscreen",
+  remoteEnabled: !isEmbed
+});
 const frame = document.querySelector("[data-testid='bigscreen-frame']");
 const slideCount = document.querySelector("[data-testid='bigscreen-count']");
 const mirrorStatus = document.querySelector("[data-testid='bigscreen-status']");
@@ -37,6 +40,8 @@ let lastEndRevealAt = null;
 
 const END_ROLL_START_DELAY_MS = 3000;
 const END_CYMBAL_DELAY_MS = 1300;
+// deep-item index:
+// 0 short pencil, 1 long pencil, 2 snake, 3 train
 const DEEP_COMPARE_STEPS = [
   [0, 1],
   [1, 2],
@@ -395,6 +400,13 @@ function ensureFrameLiveStyle(doc) {
       border-color: #ff4f7d !important;
       box-shadow: 0 0 0 4px rgba(255, 79, 125, 0.24);
     }
+    .deep-item.live-kick {
+      border-color: #ff8aa6 !important;
+      box-shadow: 0 0 0 5px rgba(255, 138, 166, 0.34), 0 9px 18px rgba(19, 24, 47, 0.2);
+      transform: translateY(-2px) scale(1.03);
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+      animation: live-deep-kick 180ms ease-out;
+    }
     .flow-progress span.live-beat {
       background: #fff38e !important;
       box-shadow: 0 0 14px rgba(255, 241, 140, 0.78);
@@ -408,6 +420,11 @@ function ensureFrameLiveStyle(doc) {
     @keyframes live-pop {
       0% { transform: scale(0.94); }
       55% { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    @keyframes live-deep-kick {
+      0% { transform: scale(0.97); }
+      55% { transform: scale(1.04); }
       100% { transform: scale(1); }
     }
   `;
@@ -514,8 +531,68 @@ function applyDeepCompareInteraction(doc, slide) {
   const pair = DEEP_COMPARE_STEPS[((subStep % DEEP_COMPARE_STEPS.length) + DEEP_COMPARE_STEPS.length) % DEEP_COMPARE_STEPS.length];
   const items = Array.from(doc.querySelectorAll(".deep-item"));
   items.forEach((item, idx) => {
+    item.classList.remove("highlight");
     item.classList.toggle("live-highlight", pair.includes(idx));
   });
+}
+
+function clearDeepCompareBeatSync(doc) {
+  if (!doc) {
+    return;
+  }
+  doc.querySelectorAll(".deep-item.live-kick").forEach((item) => {
+    item.classList.remove("live-kick");
+  });
+}
+
+function applyDeepCompareBeatEmphasis(doc, slide, step16) {
+  if (!doc || !slide || slide.kind !== "deep_compare") {
+    clearDeepCompareBeatSync(doc);
+    return;
+  }
+
+  const interaction = state.slideInteractions?.[slide.id] || {};
+  const subStep = Number.isFinite(interaction.subStep)
+    ? Number(interaction.subStep)
+    : inferDefaultSubStep(slide);
+  const pair = DEEP_COMPARE_STEPS[((subStep % DEEP_COMPARE_STEPS.length) + DEEP_COMPARE_STEPS.length) % DEEP_COMPARE_STEPS.length];
+  const beatIndex = ((Number(step16) || 0) % 16 + 16) % 16;
+  // Kick is on 0/8, so switch between the selected pair on each half bar.
+  const activePairIndex = beatIndex < 8 ? 0 : 1;
+  const kickTarget = pair[activePairIndex];
+
+  const items = Array.from(doc.querySelectorAll(".deep-item"));
+  items.forEach((item, idx) => {
+    item.classList.toggle("live-kick", idx === kickTarget);
+  });
+}
+
+function applyBeatLinkedVisuals(doc, slide, step16) {
+  if (!doc || !slide) {
+    return;
+  }
+
+  if (slide.kind === "rhythm" || slide.kind === "deep_compare") {
+    applyBeatPulse(step16);
+  } else {
+    clearBeatPulse(doc);
+  }
+
+  if (slide.kind === "rhythm") {
+    applyRhythmKickEmphasis(doc, slide, step16);
+    clearDeepCompareBeatSync(doc);
+    return;
+  }
+
+  if (slide.kind === "deep_compare") {
+    doc.querySelectorAll(".focus-card.live-kick").forEach((card) => {
+      card.classList.remove("live-kick");
+    });
+    applyDeepCompareBeatEmphasis(doc, slide, step16);
+    return;
+  }
+
+  clearDeepCompareBeatSync(doc);
 }
 
 function applySlideInteraction() {
@@ -527,12 +604,7 @@ function applySlideInteraction() {
   ensureFrameLiveStyle(doc);
   applyWorkInteraction(doc, slide);
   applyDeepCompareInteraction(doc, slide);
-  if (slide.kind === "rhythm" || slide.kind === "deep_compare") {
-    applyBeatPulse(latestBeatStep16);
-    applyRhythmKickEmphasis(doc, slide, latestBeatStep16);
-  } else {
-    clearBeatPulse(doc);
-  }
+  applyBeatLinkedVisuals(doc, slide, latestBeatStep16);
 
   if (slide.kind === "end") {
     const interaction = state.slideInteractions?.[slide.id] || {};
@@ -587,10 +659,7 @@ bus.onSignal((signal) => {
   if (!doc) {
     return;
   }
-  if (slide.kind === "rhythm" || slide.kind === "deep_compare") {
-    applyBeatPulse(latestBeatStep16);
-    applyRhythmKickEmphasis(doc, slide, latestBeatStep16);
-  }
+  applyBeatLinkedVisuals(doc, slide, latestBeatStep16);
 });
 
 const latest = bus.getLatestState();

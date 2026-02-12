@@ -5,7 +5,9 @@
 ## 1. 実装スタック
 - フロントエンド: Vite + Vanilla ES Modules
 - 実行端末: iPad Safari / Chrome / Desktop Browser
-- 通信: 同一ブラウザ内同期（BroadcastChannel + localStorage）
+- 通信:
+  - 同一ブラウザ内同期（BroadcastChannel + localStorage）
+  - 端末間同期（PeerJS DataConnection, runner がホスト / big-screen が接続）
 
 ## 2. エントリーポイント
 - 講師画面: `week5-runner.html`
