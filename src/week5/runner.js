@@ -1,4 +1,3 @@
-import "./styles.css";
 import {
   FLOW_STEPS,
   LESSON_GOALS,
@@ -123,6 +122,7 @@ const elements = {
   correctButton: document.querySelector("[data-testid='correct-btn']"),
   incorrectButton: document.querySelector("[data-testid='incorrect-btn']"),
   resetPointsButton: document.querySelector("[data-testid='reset-points-btn']"),
+  lessonResetButton: document.querySelector("[data-testid='lesson-reset-btn']"),
   openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
   soundButton: document.querySelector("[data-testid='sound-btn']"),
   subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
@@ -416,6 +416,28 @@ function setSlideInteraction(slideId, patch) {
   };
 }
 
+function createFreshLessonState() {
+  return normalizeTimerState({
+    ...fallbackState,
+    bgmEnabled: state?.bgmEnabled ?? fallbackState.bgmEnabled,
+    timerRunning: false,
+    timerOffsetSec: 0,
+    timerStartedAt: null,
+    slideIndex: 0,
+    studentPoints: 0,
+    teacherPoints: 0,
+    slideInteractions: {},
+    fxEvent: null,
+    updatedAt: nowMs()
+  });
+}
+
+function shouldResetOnLoad() {
+  const newFlag = params.get("new");
+  const resetFlag = params.get("reset");
+  return newFlag === "1" || resetFlag === "1";
+}
+
 function render() {
   const slide = currentSlide();
   if (slide.kind !== "end" && endRevealTimer) {
@@ -637,13 +659,21 @@ function handleArrowKey(event) {
 
   if (event.key === "ArrowRight") {
     event.preventDefault();
-    goNext();
+    if (event.shiftKey) {
+      goNext();
+      return;
+    }
+    goSubNext();
     return;
   }
 
   if (event.key === "ArrowLeft") {
     event.preventDefault();
-    goPrev();
+    if (event.shiftKey) {
+      goPrev();
+      return;
+    }
+    goSubPrev();
   }
 }
 
@@ -704,6 +734,16 @@ async function setupControls() {
         studentPoints: 0,
         teacherPoints: 0
       });
+    });
+  }
+
+  if (elements.lessonResetButton) {
+    elements.lessonResetButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playNavigate();
+      state = createFreshLessonState();
+      render();
+      bus.publishState(state);
     });
   }
 
@@ -818,6 +858,10 @@ function bootstrap() {
   setupControls();
   setupRealtimeSync();
   window.addEventListener("resize", fitRunnerScale);
+
+  if (shouldResetOnLoad()) {
+    state = createFreshLessonState();
+  }
 
   render();
   bus.publishState(state);

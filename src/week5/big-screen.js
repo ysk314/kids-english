@@ -1,4 +1,3 @@
-import "./styles.css";
 import { WEEK5_SLIDES } from "./lessonData.js";
 import { SessionBus, defaultSessionId } from "./sessionBus.js";
 
