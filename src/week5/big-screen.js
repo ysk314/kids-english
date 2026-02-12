@@ -45,10 +45,13 @@ const DEEP_COMPARE_STEPS = [
 ];
 
 function resolveAssetUrl(pathname) {
-  const base = import.meta.env.BASE_URL || "/";
-  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
   const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
-  return new URL(`${normalizedBase}${normalizedPath}`, window.location.origin).toString();
+  const viteBase = import.meta.env?.BASE_URL;
+  if (typeof viteBase === "string" && viteBase.length > 0) {
+    const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
+    return new URL(`${normalizedBase}${normalizedPath}`, window.location.href).toString();
+  }
+  return new URL(normalizedPath, window.location.href).toString();
 }
 
 function render() {

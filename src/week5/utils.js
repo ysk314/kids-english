@@ -23,9 +23,20 @@ export function nowMs() {
   return Date.now();
 }
 
+function currentHref() {
+  if (typeof window !== "undefined" && window.location && typeof window.location.href === "string") {
+    return window.location.href;
+  }
+  return "http://localhost/";
+}
+
 export function resolveAppPath(pathname) {
-  const base = import.meta.env.BASE_URL || "/";
-  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
   const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
-  return `${normalizedBase}${normalizedPath}`;
+  const href = currentHref();
+  const viteBase = import.meta.env?.BASE_URL;
+  if (typeof viteBase === "string" && viteBase.length > 0) {
+    const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
+    return new URL(`${normalizedBase}${normalizedPath}`, href).pathname;
+  }
+  return new URL(normalizedPath, href).pathname;
 }
