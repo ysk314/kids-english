@@ -249,6 +249,13 @@ function initializePreviewFrame() {
   if (elements.previewFrame.getAttribute("src") !== url) {
     elements.previewFrame.setAttribute("src", url);
   }
+  elements.previewFrame.addEventListener("load", () => {
+    const frameDoc = elements.previewFrame?.contentDocument;
+    if (!frameDoc) {
+      return;
+    }
+    frameDoc.addEventListener("keydown", handleArrowKey);
+  });
 }
 
 function makeFxEvent(kind) {

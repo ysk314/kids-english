@@ -175,17 +175,17 @@ const WORK_EN = [
 ];
 
 const DEEP_COMPARE_PAIRS_JP = [
-  "みじかいえんぴつ / ながいえんぴつ",
-  "ながいえんぴつ / へび",
+  "えんぴつ / えんぴつ",
+  "えんぴつ / へび",
   "へび / でんしゃ",
-  "みじかいえんぴつ / でんしゃ"
+  "えんぴつ / でんしゃ"
 ];
 
 const DEEP_COMPARE_PAIRS_EN = [
-  "short pencil / long pencil",
-  "long pencil / snake",
+  "pencil / pencil",
+  "pencil / snake",
   "snake / train",
-  "short pencil / train"
+  "pencil / train"
 ];
 
 export const FLOW_STEPS = [
@@ -277,7 +277,7 @@ function createRhythmSummarySlide({ id, phase, stepId, modeLabel, bpm }) {
         aim: phase === "jp" ? "4セットを続けて発話し、リズムを固定する。" : "4セットを英語で通し、テンポを維持する。",
       script:
         phase === "jp"
-          ? "せんせい「4せっと まとめて いってみよう」"
+          ? "せんせい「4セット まとめて いってみよう」"
           : 'Teacher: "All four pairs. Keep the rhythm!"'
     }
   };

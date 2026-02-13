@@ -270,7 +270,7 @@ function triggerPointFx(type, label) {
   pointFxTimer = window.setTimeout(() => {
     pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect", "symbol");
     pointFxTimer = null;
-  }, 700);
+  }, 980);
 }
 
 function triggerEndFx() {
@@ -397,12 +397,12 @@ function ensureFrameLiveStyle(doc) {
       box-shadow: 0 0 0 5px rgba(235, 78, 98, 0.22);
     }
     .deep-item.live-highlight {
-      border-color: #ff4f7d !important;
-      box-shadow: 0 0 0 4px rgba(255, 79, 125, 0.24);
+      border: 4px solid #2d7dff !important;
+      box-shadow: 0 0 0 6px rgba(45, 125, 255, 0.26);
     }
     .deep-item.live-kick {
-      border-color: #ff8aa6 !important;
-      box-shadow: 0 0 0 5px rgba(255, 138, 166, 0.34), 0 9px 18px rgba(19, 24, 47, 0.2);
+      border: 4px solid #2d7dff !important;
+      box-shadow: 0 0 0 7px rgba(45, 125, 255, 0.34), 0 9px 18px rgba(19, 24, 47, 0.2);
       transform: translateY(-2px) scale(1.03);
       transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
       animation: live-deep-kick 180ms ease-out;
@@ -412,8 +412,8 @@ function ensureFrameLiveStyle(doc) {
       box-shadow: 0 0 14px rgba(255, 241, 140, 0.78);
     }
     .focus-card.live-kick {
-      border-color: #ffd95a !important;
-      box-shadow: 0 0 0 5px rgba(255, 217, 90, 0.28), 0 12px 24px rgba(19, 24, 47, 0.2);
+      border: 4px solid #2d7dff !important;
+      box-shadow: 0 0 0 7px rgba(45, 125, 255, 0.3), 0 12px 24px rgba(19, 24, 47, 0.2);
       transform: translateY(-2px) scale(1.015);
       transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
     }
