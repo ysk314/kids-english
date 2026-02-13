@@ -254,7 +254,15 @@ function initializePreviewFrame() {
     if (!frameDoc) {
       return;
     }
-    frameDoc.addEventListener("keydown", handleArrowKey);
+    bindArrowKeyToDoc(frameDoc);
+    const nestedFrame = frameDoc.querySelector("[data-testid='bigscreen-frame']");
+    if (!nestedFrame) {
+      return;
+    }
+    nestedFrame.addEventListener("load", () => {
+      bindArrowKeyToDoc(nestedFrame.contentDocument);
+    });
+    bindArrowKeyToDoc(nestedFrame.contentDocument);
   });
 }
 
