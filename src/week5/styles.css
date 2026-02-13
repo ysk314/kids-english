@@ -490,11 +490,11 @@ body.embed-bigscreen .fullscreen-btn {
 }
 
 .bigscreen-point-fx.active {
-  animation: point-flash 680ms ease-out forwards;
+  animation: point-flash 1500ms ease-out forwards;
 }
 
 .bigscreen-point-fx.active .bigscreen-point-fx-label {
-  animation: point-pop 680ms ease-out forwards;
+  animation: point-pop 1500ms ease-out forwards;
 }
 
 @keyframes point-flash {
@@ -512,15 +512,19 @@ body.embed-bigscreen .fullscreen-btn {
 @keyframes point-pop {
   0% {
     opacity: 0;
-    transform: scale(0.6);
+    transform: scale(0.62);
   }
-  35% {
+  24% {
     opacity: 1;
     transform: scale(1.03);
   }
+  72% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
   100% {
     opacity: 0;
-    transform: scale(1.25);
+    transform: scale(1.18);
   }
 }
 

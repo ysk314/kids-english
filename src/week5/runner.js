@@ -615,6 +615,11 @@ async function goSubPrev() {
   }
   await ensureAudioReady();
   if (slide.kind === "end") {
+    const currentStep = Number(getSlideInteraction(slide.id).subStep ?? 0);
+    if (currentStep <= 0) {
+      await goPrev();
+      return;
+    }
     if (endRevealTimer) {
       window.clearTimeout(endRevealTimer);
       endRevealTimer = null;

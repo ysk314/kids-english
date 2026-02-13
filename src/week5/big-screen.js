@@ -37,6 +37,7 @@ let lastSlideId = "";
 let lastBeatSignalId = "";
 let latestBeatStep16 = 0;
 let lastEndRevealAt = null;
+const POINT_FX_DURATION_MS = 1900;
 
 const END_ROLL_START_DELAY_MS = 3000;
 const END_CYMBAL_DELAY_MS = 1300;
@@ -270,7 +271,7 @@ function triggerPointFx(type, label) {
   pointFxTimer = window.setTimeout(() => {
     pointFx.classList.remove("active", "student", "teacher", "correct", "incorrect", "symbol");
     pointFxTimer = null;
-  }, 1250);
+  }, POINT_FX_DURATION_MS);
 }
 
 function triggerEndFx() {
@@ -326,11 +327,11 @@ function triggerFxEventIfNeeded(incoming) {
   lastFxId = fxEvent.id;
 
   if (fxEvent.kind === "student") {
-    triggerPointFx("student", "みんな +1");
+    triggerPointFx("student", "みんな＋１点");
     return;
   }
   if (fxEvent.kind === "teacher") {
-    triggerPointFx("teacher", "むつみせんせい +1");
+    triggerPointFx("teacher", "むつみせんせい +1点");
     return;
   }
   if (fxEvent.kind === "correct") {
