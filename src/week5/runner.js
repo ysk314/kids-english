@@ -243,12 +243,41 @@ function updatePreview(slide) {
   elements.previewLabel.textContent = `${slide.id} / ${slide.hint.title}`;
 }
 
+function bindArrowKeyToDoc(doc) {
+  if (!doc || doc.__week5RunnerArrowBound) {
+    return;
+  }
+  doc.addEventListener("keydown", handleArrowKey, true);
+  doc.__week5RunnerArrowBound = true;
+}
+
+function bindArrowKeyToPreviewFrames() {
+  const frameDoc = elements.previewFrame?.contentDocument;
+  if (!frameDoc) {
+    return;
+  }
+  bindArrowKeyToDoc(frameDoc);
+  const nestedFrame = frameDoc.querySelector("[data-testid='bigscreen-frame']");
+  if (!nestedFrame) {
+    return;
+  }
+  nestedFrame.addEventListener("load", () => {
+    bindArrowKeyToDoc(nestedFrame.contentDocument);
+  });
+  bindArrowKeyToDoc(nestedFrame.contentDocument);
+}
+
 function initializePreviewFrame() {
   const baseUrl = resolveAppPath("week5-big-screen.html");
   const url = `${baseUrl}?session=${encodeURIComponent(sessionId)}&embed=1`;
+  if (!elements.previewFrame) {
+    return;
+  }
   if (elements.previewFrame.getAttribute("src") !== url) {
     elements.previewFrame.setAttribute("src", url);
   }
+  elements.previewFrame.addEventListener("load", bindArrowKeyToPreviewFrames);
+  bindArrowKeyToPreviewFrames();
 }
 
 function makeFxEvent(kind) {
@@ -656,12 +685,11 @@ function handleArrowKey(event) {
   }
 
   const target = event.target;
+  const elementTarget = target && target.nodeType === Node.ELEMENT_NODE ? target : null;
+  const tagName = String(elementTarget?.tagName || "").toUpperCase();
   if (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.tagName === "SELECT")
+    elementTarget &&
+    (Boolean(elementTarget.isContentEditable) || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT")
   ) {
     return;
   }
@@ -787,7 +815,7 @@ async function setupControls() {
     render();
   });
 
-  window.addEventListener("keydown", handleArrowKey);
+  window.addEventListener("keydown", handleArrowKey, true);
   if (!beatListenerBound) {
     audio.onBeat((beat) => {
       if (!audioReady) {
@@ -882,7 +910,7 @@ window.addEventListener("beforeunload", () => {
   }
   stopBeatSignal();
   window.removeEventListener("resize", fitRunnerScale);
-  window.removeEventListener("keydown", handleArrowKey);
+  window.removeEventListener("keydown", handleArrowKey, true);
   audio.destroy();
   bus.close();
 });
