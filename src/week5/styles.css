@@ -504,6 +504,9 @@ body.embed-bigscreen .fullscreen-btn {
   25% {
     opacity: 1;
   }
+  82% {
+    opacity: 1;
+  }
   100% {
     opacity: 0;
   }
@@ -521,6 +524,10 @@ body.embed-bigscreen .fullscreen-btn {
   72% {
     opacity: 1;
     transform: scale(1.02);
+  }
+  82% {
+    opacity: 1;
+    transform: scale(1.04);
   }
   100% {
     opacity: 0;
