@@ -27,8 +27,8 @@
 ### M2 第5週Web実装
 - 状態: 完了
 - 成果:
-  - `week5-runner.html`
-  - `week5-big-screen.html`
+  - `week5/runner.html`
+  - `week5/big-screen.html`
   - スライド同期
   - 43枚進行
 

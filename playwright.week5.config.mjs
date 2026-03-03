@@ -13,7 +13,7 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run week5:dev -- --host 127.0.0.1 --port 4173",
-    url: "http://127.0.0.1:4173/week5-runner.html",
+    url: "http://127.0.0.1:4173/week5/runner.html",
     timeout: 120_000,
     reuseExistingServer: true
   }

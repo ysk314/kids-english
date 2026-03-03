@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>授業ランナー（第5週）</title>
+    <link rel="stylesheet" href="../src/week5/styles.css">
+    <script type="module" src="../src/week5/runner.js"></script>
+  </head>
+  <body class="week5-runner-page">
+    <div class="runner-scale" data-role="runner-scale">
+    <main class="screen-shell runner-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo-box">塾</div>
+          <div>
+            <h1>授業ランナー（第5週）</h1>
+            <p>はんたい・くらべる / 大画面43枚を講師ヒントで進行</p>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="chip">Slide: <strong data-testid="slide-counter">1 / 43</strong></span>
+          <span data-role="mirror-chip" class="chip">Mirror Waiting</span>
+          <span class="chip">Class: ひまわり組</span>
+        </div>
+      </header>
+
+      <section class="panel runner-head-panel">
+        <div class="runner-mainline">
+          <div data-role="flow-steps" class="flow-steps flow-inline"></div>
+          <div class="timer-cluster">
+            <div class="timer" data-testid="lesson-timer">00:00 / 45:00</div>
+            <div class="timer-icon-group" role="group" aria-label="タイマー操作">
+              <button type="button" class="timer-icon-btn timer-text-btn" data-testid="timer-toggle-btn" title="スタート/一時停止" aria-label="スタート/一時停止">スタート▶︎</button>
+              <button type="button" class="timer-icon-btn timer-text-btn" data-testid="timer-reset-btn" title="リセット" aria-label="リセット">リセット</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel goal-panel">
+        <div class="goal-inline-row">
+          <h2>今回の授業のねらい</h2>
+          <div class="goal-grid" data-role="goal-grid"></div>
+        </div>
+      </section>
+
+      <section class="runner-layout">
+        <div class="runner-left-stack">
+          <article class="question-card preview-card">
+            <p data-testid="stage-preview-label" style="font-size:12px;font-weight:700;margin:6px 0 6px;color:#50556a">-</p>
+            <div class="stage-preview-frame">
+              <iframe
+                data-testid="stage-preview-frame"
+                class="stage-preview-iframe"
+                title="現在表示中の大画面"
+                src="./big-screen.html?embed=1"
+              ></iframe>
+            </div>
+            <p class="app-footnote">講師タブレットで選択したスライドを、そのまま大画面へミラー表示する想定。</p>
+          </article>
+        </div>
+
+        <aside class="runner-right-stack">
+          <article class="control-panel runner-controller-panel">
+            <h5>講師コントローラー</h5>
+            <div class="control-groups">
+              <section class="control-group">
+                <p class="control-label">表示・音</p>
+                <div class="control-row row-3">
+                  <button type="button" class="btn btn-open" data-testid="open-bigscreen-btn">大画面をひらく</button>
+                  <button type="button" class="btn btn-sound" data-testid="sound-btn">サウンド開始</button>
+                  <button type="button" class="btn btn-reset" data-testid="lesson-reset-btn">授業リセット</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">判定</p>
+                <div class="control-row row-2">
+                  <button type="button" class="btn btn-correct" data-testid="correct-btn">正解</button>
+                  <button type="button" class="btn btn-incorrect" data-testid="incorrect-btn">不正解</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">得点</p>
+                <div class="control-row row-3">
+                  <button type="button" class="btn point-student" data-testid="student-point-btn">みんなに+1</button>
+                  <button type="button" class="btn point-teacher" data-testid="teacher-point-btn">むつみ先生+1</button>
+                  <button type="button" class="btn btn-reset" data-testid="reset-points-btn">点数リセット</button>
+                </div>
+              </section>
+
+              <section class="control-group">
+                <p class="control-label">進行</p>
+                <div class="control-row row-2">
+                  <button type="button" class="btn btn-subnav" data-testid="sub-prev-btn">◀ スライド内</button>
+                  <button type="button" class="btn btn-subnav" data-testid="sub-next-btn">スライド内 ▶</button>
+                </div>
+                <div class="control-row row-2">
+                  <button type="button" class="btn soft" data-testid="prev-btn">前へ</button>
+                  <button type="button" class="btn accent" data-testid="next-btn">次へ</button>
+                </div>
+              </section>
+            </div>
+            <div class="hidden-metrics" aria-hidden="true">
+              <span data-testid="student-points">0</span>
+              <span data-testid="teacher-points">0</span>
+            </div>
+          </article>
+
+          <article class="control-panel hint-panel">
+            <div class="teacher-hint">
+              <h5>講師ヒント（大画面43枚）</h5>
+              <div class="hint-meta">
+                <span class="hint-phase" data-testid="hint-phase">-</span>
+                <span class="hint-id" data-testid="hint-id">-</span>
+              </div>
+              <div class="hint-row">
+                <strong>タイトル：</strong>
+                <p data-testid="hint-title">-</p>
+              </div>
+              <div class="hint-row">
+                <strong>ねらい：</strong>
+                <p data-testid="hint-aim">-</p>
+              </div>
+              <div class="hint-row">
+                <strong>講師セリフ：</strong>
+                <p data-testid="hint-script">-</p>
+              </div>
+            </div>
+
+            <div class="hint-list" data-testid="hint-list"></div>
+          </article>
+        </aside>
+      </section>
+    </main>
+    </div>
+  </body>
+</html>

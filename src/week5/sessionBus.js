@@ -56,8 +56,11 @@ export class SessionBus {
     this.runnerPeerId = buildRunnerPeerId(sessionId);
     this.peer = null;
     this.peerReady = false;
+    this.closed = false;
+    this.setupRemoteSyncPending = false;
     this.runnerConnections = new Map();
     this.remoteConnection = null;
+    this.connectTimeoutTimer = null;
     this.reconnectTimer = null;
 
     this.stateHandlers = new Set();
@@ -179,49 +182,65 @@ export class SessionBus {
   }
 
   async setupRemoteSync() {
-    const PeerCtor = await loadPeerConstructor();
-    if (!PeerCtor) {
-      this.remoteEnabled = false;
+    if (this.closed || this.setupRemoteSyncPending) {
       return;
     }
-
-    const peerId = this.role === "runner" ? this.runnerPeerId : undefined;
-    this.peer = new PeerCtor(peerId);
-
-    this.peer.on("open", () => {
-      this.peerReady = true;
-      if (this.role === "bigscreen") {
-        this.connectToRunner();
-      }
-    });
-
-    this.peer.on("connection", (connection) => {
-      if (this.role !== "runner") {
-        connection.close();
+    this.setupRemoteSyncPending = true;
+    try {
+      const PeerCtor = await loadPeerConstructor();
+      if (!PeerCtor) {
+        this.remoteEnabled = false;
         return;
       }
-      this.attachRunnerConnection(connection);
-    });
 
-    this.peer.on("disconnected", () => {
-      this.peerReady = false;
-      if (this.role === "bigscreen") {
-        this.scheduleReconnect();
+      if (this.closed) {
+        return;
       }
-    });
 
-    this.peer.on("close", () => {
-      this.peerReady = false;
-      if (this.role === "bigscreen") {
-        this.scheduleReconnect();
-      }
-    });
+      const peerId = this.role === "runner" ? this.runnerPeerId : undefined;
+      this.peer = new PeerCtor(peerId);
 
-    this.peer.on("error", () => {
-      if (this.role === "bigscreen") {
+      this.peer.on("open", () => {
+        this.peerReady = true;
+        this.clearReconnectTimer();
+        if (this.role === "bigscreen") {
+          this.connectToRunner();
+        }
+      });
+
+      this.peer.on("connection", (connection) => {
+        if (this.role !== "runner") {
+          connection.close();
+          return;
+        }
+        this.attachRunnerConnection(connection);
+      });
+
+      this.peer.on("disconnected", () => {
+        this.peerReady = false;
         this.scheduleReconnect();
-      }
-    });
+      });
+
+      this.peer.on("close", () => {
+        this.peerReady = false;
+        this.scheduleReconnect();
+      });
+
+      this.peer.on("error", (error) => {
+        if (error && typeof error.type === "string" && error.type === "unavailable-id") {
+          try {
+            this.peer?.destroy();
+          } catch {
+            // no-op
+          }
+          this.peer = null;
+        }
+        this.peerReady = false;
+        this.scheduleReconnect();
+      });
+    } finally {
+      this.setupRemoteSyncPending = false;
+    }
   }
 
   attachRunnerConnection(connection) {
@@ -261,8 +280,24 @@ export class SessionBus {
       reliable: true
     });
     this.remoteConnection = connection;
+    this.clearConnectTimeout();
+    this.connectTimeoutTimer = window.setTimeout(() => {
+      if (this.closed) {
+        return;
+      }
+      if (this.remoteConnection === connection && !connection.open) {
+        try {
+          connection.close();
+        } catch {
+          // no-op
+        }
+        this.remoteConnection = null;
+        this.scheduleReconnect();
+      }
+    }, 5_000);
 
     connection.on("open", () => {
+      this.clearConnectTimeout();
       this.clearReconnectTimer();
     });
 
@@ -271,6 +306,7 @@ export class SessionBus {
     });
 
     const recover = () => {
+      this.clearConnectTimeout();
       if (this.remoteConnection === connection) {
         this.remoteConnection = null;
       }
@@ -281,22 +317,31 @@ export class SessionBus {
   }
 
   scheduleReconnect() {
-    if (this.role !== "bigscreen" || this.reconnectTimer) {
+    if (this.closed || this.reconnectTimer || !this.remoteEnabled) {
       return;
     }
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
-      if (!this.peer) {
+      if (this.closed || !this.remoteEnabled) {
         return;
       }
-      if (this.peer.disconnected && typeof this.peer.reconnect === "function") {
+      if (!this.peer || this.peer.destroyed) {
+        this.setupRemoteSync().catch(() => {
+          this.scheduleReconnect();
+        });
+        return;
+      }
+      const needPeerReconnect = !this.peerReady || this.peer.disconnected;
+      if (needPeerReconnect && typeof this.peer.reconnect === "function") {
         try {
           this.peer.reconnect();
         } catch {
           // no-op
         }
       }
-      this.connectToRunner();
+      if (this.role === "bigscreen") {
+        this.connectToRunner();
+      }
     }, REMOTE_RECONNECT_DELAY_MS);
   }
 
@@ -306,6 +351,14 @@ export class SessionBus {
     }
     window.clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
+  }
+
+  clearConnectTimeout() {
+    if (!this.connectTimeoutTimer) {
+      return;
+    }
+    window.clearTimeout(this.connectTimeoutTimer);
+    this.connectTimeoutTimer = null;
   }
 
   broadcastRemote(envelope) {
@@ -357,9 +410,12 @@ export class SessionBus {
   }
 
   close() {
+    this.closed = true;
+    this.remoteEnabled = false;
     window.removeEventListener("storage", this.handleStorage);
     this.channel?.removeEventListener("message", this.handleChannelMessage);
     this.channel?.close();
+    this.clearConnectTimeout();
     this.clearReconnectTimer();
     if (this.remoteConnection) {
       this.remoteConnection.close();
@@ -380,6 +436,7 @@ export class SessionBus {
   }
 }
 
-export function defaultSessionId() {
-  return "week5-main";
+export function defaultSessionId(scope = "week5") {
+  const normalizedScope = sanitizeSessionId(scope || "week5").replace(/-main$/, "");
+  return `${normalizedScope || "week5"}-main`;
 }

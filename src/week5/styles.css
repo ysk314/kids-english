@@ -326,7 +326,7 @@ body.week5-runner-page {
 }
 
 .hint-list {
-  max-height: 132px;
+  max-height: 88px;
   margin-top: 4px;
   padding: 4px;
   gap: 4px;
@@ -345,7 +345,7 @@ body.week5-runner-page {
   margin-bottom: 4px;
   padding: 4px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -361,6 +361,17 @@ body.week5-runner-page {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.hint-row p[data-testid="hint-script"] {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-height: 1.3;
+  min-height: calc(1.3em * 3);
 }
 
 .hint-item {

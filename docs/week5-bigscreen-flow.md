@@ -13,32 +13,32 @@
 2. 日本語導入（6枚）
 - `12_jp_rhythm_1`〜`12_jp_rhythm_4`（4枚）
 - `12_jp_rhythm_summary`（1枚）
-- `12_jp_break_work`（1枚）
+- `12_jp_rhythm_to_work`（1枚）
 
 3. 日本語本題（8枚）
 - `13_jp_work_1`〜`13_jp_work_8`
 - 形式: 大カード1枚 + 候補2枚
 
 4. 日本語深掘り（6枚）
-- `13_jp_break_deep`（1枚）
+- `13_jp_work_to_deep`（1枚）
 - `14_jp_deep_step_1`〜`14_jp_deep_step_4`（4枚）
 - `15_jp_deep_compare_1`（1枚）
 - `15_jp_deep_compare_1` は `スライド内進行` で比較ペアを4段階切替
 
 5. 英語開始（1枚）
-- `15_break_en_start`
+- `15_jp_to_en_start`
 
 6. 英語導入（6枚）
 - `16_en_rhythm_1`〜`16_en_rhythm_4`（4枚）
 - `16_en_rhythm_summary`（1枚）
-- `16_en_break_work`（1枚）
+- `16_en_rhythm_to_work`（1枚）
 
 7. 英語本題（8枚）
 - `17_en_work_1`〜`17_en_work_8`
 - 形式: 大カード1枚 + 候補2枚
 
 8. 英語深掘り（6枚）
-- `17_en_break_deep`（1枚）
+- `17_en_work_to_deep`（1枚）
 - `18_en_deep_step_1`〜`18_en_deep_step_4`（4枚）
 - `19_en_deep_compare_1`（1枚）
 - `19_en_deep_compare_1` は `スライド内進行` で比較ペアを4段階切替

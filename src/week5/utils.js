@@ -30,8 +30,27 @@ function currentHref() {
   return "http://localhost/";
 }
 
+function normalizeAppRelativePath(pathname) {
+  const input = String(pathname ?? "");
+  const raw = input.startsWith("/") ? input.slice(1) : input;
+  const safeSegments = [];
+  raw.split("/").forEach((segment) => {
+    if (!segment || segment === ".") {
+      return;
+    }
+    if (segment === "..") {
+      if (safeSegments.length > 0) {
+        safeSegments.pop();
+      }
+      return;
+    }
+    safeSegments.push(segment);
+  });
+  return safeSegments.join("/");
+}
+
 export function resolveAppPath(pathname) {
-  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  const normalizedPath = normalizeAppRelativePath(pathname);
   const href = currentHref();
   const viteBase = import.meta.env?.BASE_URL;
   if (typeof viteBase === "string" && viteBase.length > 0) {

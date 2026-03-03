@@ -2,7 +2,7 @@ import { WEEK5_SLIDES } from "./lessonData.js";
 import { SessionBus, defaultSessionId } from "./sessionBus.js";
 
 const params = new URLSearchParams(window.location.search);
-const sessionId = params.get("session") || defaultSessionId();
+const sessionId = params.get("session") || defaultSessionId("week5");
 const isEmbed = params.get("embed") === "1";
 
 const bus = new SessionBus(sessionId, {
@@ -371,6 +371,10 @@ function ensureFrameLiveStyle(doc) {
   if (!doc || doc.getElementById("week5-live-effects-style")) {
     return;
   }
+  const injectionTarget = doc.head || doc.body || doc.documentElement;
+  if (!injectionTarget) {
+    return;
+  }
   const style = doc.createElement("style");
   style.id = "week5-live-effects-style";
   style.textContent = `
@@ -429,7 +433,7 @@ function ensureFrameLiveStyle(doc) {
       100% { transform: scale(1); }
     }
   `;
-  doc.head.appendChild(style);
+  injectionTarget.appendChild(style);
 }
 
 function inferDefaultSubStep(slide) {
@@ -484,7 +488,8 @@ function applyRhythmKickEmphasis(doc, slide, step16) {
   if (cards.length < 2) {
     return;
   }
-  const activeIndex = step16 < 8 ? 0 : 1;
+  const beatIndex = ((Number(step16) || 0) % 16 + 16) % 16;
+  const activeIndex = beatIndex < 8 ? 0 : 1;
   cards.forEach((card, idx) => {
     card.classList.toggle("live-kick", idx === activeIndex);
   });

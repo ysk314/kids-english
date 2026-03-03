@@ -4,7 +4,7 @@ const sid = (name) => `${name}-${Date.now()}-${Math.random().toString(16).slice(
 
 test.describe("week5 runner", () => {
   test("moves slide and updates points", async ({ page }) => {
-    await page.goto(`/week5-runner.html?session=${encodeURIComponent(sid("e2e-runner"))}`);
+    await page.goto(`/week5/runner.html?session=${encodeURIComponent(sid("e2e-runner"))}`);
 
     await expect(page.getByTestId("slide-counter")).toHaveText("1 / 43");
 
@@ -30,8 +30,8 @@ test.describe("week5 runner", () => {
     const runner = await context.newPage();
     const big = await context.newPage();
 
-    await runner.goto(`/week5-runner.html?session=${encodeURIComponent(session)}`);
-    await big.goto(`/week5-big-screen.html?session=${encodeURIComponent(session)}`);
+    await runner.goto(`/week5/runner.html?session=${encodeURIComponent(session)}`);
+    await big.goto(`/week5/big-screen.html?session=${encodeURIComponent(session)}`);
 
     await expect(runner.getByText("Mirror Connected")).toBeVisible();
 
@@ -52,7 +52,7 @@ test.describe("week5 runner", () => {
   });
 
   test("supports timer toggle and reset controls", async ({ page }) => {
-    await page.goto(`/week5-runner.html?session=${encodeURIComponent(sid("e2e-timer"))}`);
+    await page.goto(`/week5/runner.html?session=${encodeURIComponent(sid("e2e-timer"))}`);
 
     await expect(page.getByTestId("timer-toggle-btn")).toHaveText("スタート▶︎");
     await expect(page.getByTestId("lesson-timer")).toHaveText("00:00 / 45:00");

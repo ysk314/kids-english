@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>16_en_rhythm_1</title>
+    <link rel="stylesheet" href="../../shared.css">
+    <style>
+      .week1-grid-2x2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .week1-grid-2x2 .deep-item {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        --img-scale: 1.18;
+      }
+      .week1-grid-2x2 .deep-item .img-viewport {
+        width: 100%;
+        height: clamp(180px, 27vh, 300px);
+        overflow: hidden;
+        border-radius: 12px;
+      }
+      .week1-grid-2x2 .deep-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transform: scale(var(--img-scale));
+        transform-origin: center center;
+      }
+      .week1-grid-2x2 .deep-item .label {
+        font-size: clamp(21px, 2.8vw, 34px);
+      }
+      .body-rhythm .week1-grid-2x2 .deep-item {
+        --img-scale: 1.2;
+      }
+      .body-work .week1-grid-2x2 .deep-item {
+        --img-scale: 1.16;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="bigscreen en">
+      <h1>Rhythm: Find the odd one!</h1>
+      <section class="slide-body body-rhythm">
+    <div class="flow-progress"><span class="on"></span><span class=""></span><span class=""></span></div>
+    <div class="deep-board compact">
+      <div class="week1-grid-2x2">
+        
+    <div class="deep-item">
+      <div class="img-viewport">
+        <img src="../../assets/week1_cards_clean/animal/dog.png" alt="dog">
+      </div>
+      <div class="label">dog</div>
+    </div>
+    <div class="deep-item">
+      <div class="img-viewport">
+        <img src="../../assets/week1_cards_clean/animal/cat.png" alt="cat">
+      </div>
+      <div class="label">cat</div>
+    </div>
+    <div class="deep-item">
+      <div class="img-viewport">
+        <img src="../../assets/week1_cards_clean/animal/rabbit.png" alt="rabbit">
+      </div>
+      <div class="label">rabbit</div>
+    </div>
+    <div class="deep-item">
+      <div class="img-viewport">
+        <img src="../../assets/week1_cards_clean/fruit/orange.png" alt="orange">
+      </div>
+      <div class="label">orange</div>
+    </div>
+      </div>
+    </div>
+  </section>
+    </main>
+  </body>
+</html>

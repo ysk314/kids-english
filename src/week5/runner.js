@@ -7,10 +7,10 @@ import {
 } from "./lessonData.js";
 import { Week5AudioEngine } from "./audioEngine.js";
 import { SessionBus, defaultSessionId } from "./sessionBus.js";
-import { LESSON_DURATION_SECONDS, clamp, formatLessonTimer, nowMs, resolveAppPath } from "./utils.js";
+import { LESSON_DURATION_SECONDS, clamp, formatLessonTimer, nowMs } from "./utils.js";
 
 const params = new URLSearchParams(window.location.search);
-const sessionId = params.get("session") || defaultSessionId();
+const sessionId = params.get("session") || defaultSessionId("week5");
 const initialSlideId = params.get("slide");
 
 const bus = new SessionBus(sessionId, {
@@ -143,6 +143,17 @@ let beatListenerBound = false;
 const BIGSCREEN_BASE_WIDTH = 1512;
 const BIGSCREEN_BASE_HEIGHT = 982;
 
+function buildBigScreenUrl({ embed = false } = {}) {
+  const url = new URL("./big-screen.html", window.location.href);
+  url.searchParams.set("session", sessionId);
+  if (embed) {
+    url.searchParams.set("embed", "1");
+  } else {
+    url.searchParams.delete("embed");
+  }
+  return `${url.pathname}${url.search}`;
+}
+
 function buildFlowSteps() {
   elements.flowSteps.innerHTML = FLOW_STEPS.map(
     (step) => `<span class='flow-step' data-step-id='${step.id}'>${step.label}</span>`
@@ -268,8 +279,7 @@ function bindArrowKeyToPreviewFrames() {
 }
 
 function initializePreviewFrame() {
-  const baseUrl = resolveAppPath("week5-big-screen.html");
-  const url = `${baseUrl}?session=${encodeURIComponent(sessionId)}&embed=1`;
+  const url = buildBigScreenUrl({ embed: true });
   if (!elements.previewFrame) {
     return;
   }
@@ -359,7 +369,15 @@ function updateSoundButtons() {
     return;
   }
 
-  elements.soundButton.textContent = state.bgmEnabled ? "サウンド/BGM ON" : "サウンド/BGM OFF";
+  const slide = currentSlide();
+  const bgmSuppressedByRhythm = state.bgmEnabled && isSlideMetronomeEnabled(slide);
+  if (state.bgmEnabled) {
+    elements.soundButton.textContent = bgmSuppressedByRhythm
+      ? "サウンド/BGM ON（リズム中BGM一時OFF）"
+      : "サウンド/BGM ON";
+  } else {
+    elements.soundButton.textContent = "サウンド/BGM OFF";
+  }
   elements.soundButton.classList.toggle("hot", state.bgmEnabled);
 }
 
@@ -381,12 +399,16 @@ function applyAudioBySlide(slide) {
     return;
   }
 
-  audio.setBgmEnabled(state.bgmEnabled);
-  if (typeof slide.bpm === "number" && slide.bpm > 0) {
+  if (isSlideMetronomeEnabled(slide)) {
     audio.setMetronome(slide.bpm);
   } else {
     audio.setMetronome(null);
   }
+  audio.setBgmEnabled(state.bgmEnabled);
+}
+
+function isSlideMetronomeEnabled(slide) {
+  return Boolean(slide && typeof slide.bpm === "number" && slide.bpm > 0);
 }
 
 function stopBeatSignal() {
@@ -406,7 +428,7 @@ function publishBeatSignal(step16, bpm, slideId) {
 }
 
 function syncBeatSignalBySlide(slide) {
-  const bpm = typeof slide.bpm === "number" && slide.bpm > 0 ? slide.bpm : null;
+  const bpm = isSlideMetronomeEnabled(slide) ? slide.bpm : null;
   if (!bpm) {
     stopBeatSignal();
     beatSignalKey = "";
@@ -809,7 +831,7 @@ async function setupControls() {
   });
 
   elements.openBigButton.addEventListener("click", () => {
-    const url = `${resolveAppPath("week5-big-screen.html")}?session=${encodeURIComponent(sessionId)}`;
+    const url = buildBigScreenUrl();
     window.open(url, "week5-bigscreen", "noopener,noreferrer");
   });
 

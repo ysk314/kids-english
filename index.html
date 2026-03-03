@@ -3,10 +3,162 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Week5 Runner</title>
-    <meta http-equiv="refresh" content="0; url=./week5-runner.html">
+    <title>Kids English Runner Home</title>
+    <style>
+      :root {
+        --bg1: #ffe9f3;
+        --bg2: #fff7e5;
+        --card: #ffffff;
+        --text: #1b1f2a;
+        --sub: #5b637a;
+        --accent: #ff4f7d;
+        --accent2: #4458a9;
+        --border: #f2d7e3;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "M PLUS Rounded 1c", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 10% 12%, #ffd6e7, transparent 34%),
+          radial-gradient(circle at 88% 18%, #ffe3a6, transparent 30%),
+          linear-gradient(135deg, var(--bg1), var(--bg2));
+        padding: 22px;
+      }
+      .shell {
+        width: min(1080px, 100%);
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.72);
+        border: 2px solid rgba(255, 255, 255, 0.7);
+        border-radius: 22px;
+        box-shadow: 0 12px 28px rgba(36, 19, 31, 0.14);
+        padding: 24px;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 44px);
+      }
+      .sub {
+        margin: 6px 0 0;
+        color: var(--sub);
+        font-size: 15px;
+      }
+      .grid {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 14px;
+      }
+      .card h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+      .desc {
+        margin: 4px 0 12px;
+        color: var(--sub);
+        font-size: 14px;
+      }
+      .links {
+        display: grid;
+        gap: 8px;
+      }
+      a {
+        display: inline-block;
+        text-decoration: none;
+        font-weight: 800;
+        border-radius: 12px;
+        padding: 10px 12px;
+        border: 2px solid transparent;
+        cursor: pointer;
+      }
+      a.runner {
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), #ff7a5b);
+      }
+      a.big {
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent2), #3c85cb);
+      }
+      a:hover { filter: brightness(1.03); }
+      .note {
+        margin-top: 14px;
+        font-size: 13px;
+        color: var(--sub);
+      }
+      @media (max-width: 800px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
   </head>
   <body>
-    <p><a href="./week5-runner.html">授業ランナーを開く</a></p>
+    <main class="shell">
+      <h1>Kids English ランナーホーム</h1>
+      <p class="sub">相対パスリンク対応（GitHub Pages / ローカルサーバー両対応）</p>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Week 1</h2>
+          <p class="desc">なかまはずれ（日本語 + 英語）</p>
+          <div class="links">
+            <a class="runner" href="./week1/runner.html" data-open-path="./week1/runner.html">Week1 ランナーを開く</a>
+            <a class="big" href="./week1/big-screen.html" data-open-path="./week1/big-screen.html">Week1 大画面を開く</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Week 5</h2>
+          <p class="desc">はんたいことば（日本語 + 英語）</p>
+          <div class="links">
+            <a class="runner" href="./week5/runner.html" data-open-path="./week5/runner.html">Week5 ランナーを開く</a>
+            <a class="big" href="./week5/big-screen.html" data-open-path="./week5/big-screen.html">Week5 大画面を開く</a>
+          </div>
+        </article>
+      </section>
+
+      <p class="note">GitHub Pages: https://ysk314.github.io/kids-english/ / ローカル: npm run -s week5:dev で起動後、このホームから各ランナーへ移動できます。</p>
+    </main>
+    <script>
+      (() => {
+        const openPath = (path) => {
+          const nextUrl = new URL(path, window.location.href).toString();
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = nextUrl;
+              return;
+            }
+            window.location.href = nextUrl;
+          } catch {
+            window.open(nextUrl, "_blank", "noopener,noreferrer");
+          }
+        };
+
+        document.querySelectorAll("a[data-open-path]").forEach((anchor) => {
+          anchor.addEventListener("click", (event) => {
+            event.preventDefault();
+            const path = anchor.getAttribute("data-open-path");
+            if (!path) {
+              return;
+            }
+            openPath(path);
+          });
+        });
+
+        if (window.location.protocol === "file:") {
+          const note = document.querySelector(".note");
+          if (note) {
+            note.textContent =
+              "file:// 直開きでは動作が不安定です。npm run -s week5:dev でサーバー起動後に http://127.0.0.1:5174/ を開いてください。";
+          }
+        }
+      })();
+    </script>
   </body>
 </html>

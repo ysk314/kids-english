@@ -9,19 +9,21 @@ describe("week5 lesson data", () => {
   it("contains all required phase blocks", () => {
     const countByPrefix = (prefix) =>
       WEEK5_SLIDES.filter((slide) => slide.id.startsWith(prefix)).length;
+    const countByPattern = (pattern) =>
+      WEEK5_SLIDES.filter((slide) => pattern.test(slide.id)).length;
 
     expect(countByPrefix("11_theme_title")).toBe(1);
-    expect(countByPrefix("12_jp_rhythm_")).toBe(5);
-    expect(countByPrefix("12_jp_break_work")).toBe(1);
-    expect(countByPrefix("13_jp_work_")).toBe(8);
-    expect(countByPrefix("13_jp_break_deep")).toBe(1);
+    expect(countByPattern(/^12_jp_rhythm_(?:[1-4]|summary)$/)).toBe(5);
+    expect(countByPrefix("12_jp_rhythm_to_work")).toBe(1);
+    expect(countByPattern(/^13_jp_work_[1-8]$/)).toBe(8);
+    expect(countByPrefix("13_jp_work_to_deep")).toBe(1);
     expect(countByPrefix("14_jp_deep_step_")).toBe(4);
     expect(countByPrefix("15_jp_deep_compare_")).toBe(1);
-    expect(countByPrefix("15_break_en_start")).toBe(1);
-    expect(countByPrefix("16_en_rhythm_")).toBe(5);
-    expect(countByPrefix("16_en_break_work")).toBe(1);
-    expect(countByPrefix("17_en_work_")).toBe(8);
-    expect(countByPrefix("17_en_break_deep")).toBe(1);
+    expect(countByPrefix("15_jp_to_en_start")).toBe(1);
+    expect(countByPattern(/^16_en_rhythm_(?:[1-4]|summary)$/)).toBe(5);
+    expect(countByPrefix("16_en_rhythm_to_work")).toBe(1);
+    expect(countByPattern(/^17_en_work_[1-8]$/)).toBe(8);
+    expect(countByPrefix("17_en_work_to_deep")).toBe(1);
     expect(countByPrefix("18_en_deep_step_")).toBe(4);
     expect(countByPrefix("19_en_deep_compare_")).toBe(1);
     expect(countByPrefix("20_end")).toBe(1);

@@ -1,6 +1,6 @@
 import { resolveAppPath } from "./utils.js";
 
-const screenPath = (id) => resolveAppPath(`mockup/screens/${id}.html`);
+const screenPath = (id) => resolveAppPath(`mockup/screens/week5/${id}.html`);
 
 const RHYTHM_PAIRS_JP = [
   {
@@ -408,7 +408,7 @@ export function buildWeek5Slides() {
       bpm: 90
     }),
     createDividerSlide({
-      id: "12_jp_break_work",
+      id: "12_jp_rhythm_to_work",
       stepId: "jp_work",
       modeLabel: "日本語本題",
       title: "日本語本題へ",
@@ -423,7 +423,7 @@ export function buildWeek5Slides() {
       list: WORK_JP
     }),
     createDividerSlide({
-      id: "13_jp_break_deep",
+      id: "13_jp_work_to_deep",
       stepId: "jp_deep",
       modeLabel: "日本語深掘り",
       title: "深く考えるへ",
@@ -446,7 +446,7 @@ export function buildWeek5Slides() {
       bpm: 90
     }),
     createDividerSlide({
-      id: "15_break_en_start",
+      id: "15_jp_to_en_start",
       stepId: "en_rhythm",
       modeLabel: "英語導入",
       title: "English Part Start!",
@@ -470,7 +470,7 @@ export function buildWeek5Slides() {
       bpm: 95
     }),
     createDividerSlide({
-      id: "16_en_break_work",
+      id: "16_en_rhythm_to_work",
       stepId: "en_work",
       modeLabel: "英語本題",
       title: "Main Task Start!",
@@ -485,7 +485,7 @@ export function buildWeek5Slides() {
       list: WORK_EN
     }),
     createDividerSlide({
-      id: "17_en_break_deep",
+      id: "17_en_work_to_deep",
       stepId: "en_deep",
       modeLabel: "英語深掘り",
       title: "Think Deeper!",

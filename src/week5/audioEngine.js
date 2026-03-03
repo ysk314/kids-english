@@ -1,7 +1,26 @@
 function noOp() {}
 
+function normalizeAssetPath(pathname) {
+  const input = String(pathname ?? "");
+  const raw = input.startsWith("/") ? input.slice(1) : input;
+  const safeSegments = [];
+  raw.split("/").forEach((segment) => {
+    if (!segment || segment === ".") {
+      return;
+    }
+    if (segment === "..") {
+      if (safeSegments.length > 0) {
+        safeSegments.pop();
+      }
+      return;
+    }
+    safeSegments.push(segment);
+  });
+  return safeSegments.join("/");
+}
+
 function resolveAssetUrl(pathname) {
-  const normalizedPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+  const normalizedPath = normalizeAssetPath(pathname);
   const viteBase = import.meta.env?.BASE_URL;
   if (typeof viteBase === "string" && viteBase.length > 0) {
     const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
@@ -63,11 +82,15 @@ export class Week5AudioEngine {
     if (!this.enabled) {
       return;
     }
-    if (enabled) {
-      this.startBgm();
-    } else {
+    if (!enabled) {
       this.stopBgm();
+      return;
     }
+    if (this.isMetronomeActive()) {
+      this.stopBgm();
+      return;
+    }
+    this.startBgm();
   }
 
   setMetronome(bpm) {
@@ -86,8 +109,9 @@ export class Week5AudioEngine {
       return;
     }
 
-    this.stopMetronome();
+    this.stopMetronome({ resumeBgm: false });
     this.activeBpm = bpm;
+    this.stopBgm();
     const intervalMs = Math.max(30, Math.floor(60_000 / bpm / 4));
     this.metroBeat = 0;
     this.metroTimer = window.setInterval(() => {
@@ -98,10 +122,14 @@ export class Week5AudioEngine {
     }, intervalMs);
   }
 
-  stopMetronome() {
+  stopMetronome({ resumeBgm = true } = {}) {
+    const wasRunning = this.isMetronomeActive();
     if (this.metroTimer) {
       window.clearInterval(this.metroTimer);
       this.metroTimer = null;
+    }
+    if (resumeBgm && wasRunning && this.bgmEnabled) {
+      this.startBgm();
     }
   }
 
@@ -213,7 +241,7 @@ export class Week5AudioEngine {
   }
 
   startBgm() {
-    if (!this.enabled || this.bgmTimer) {
+    if (!this.enabled || this.bgmTimer || this.isMetronomeActive()) {
       return;
     }
     const notes = [261.63, 329.63, 392.0, 329.63, 293.66, 369.99, 440.0, 369.99];
@@ -230,6 +258,10 @@ export class Week5AudioEngine {
       window.clearInterval(this.bgmTimer);
       this.bgmTimer = null;
     }
+  }
+
+  isMetronomeActive() {
+    return Boolean(this.metroTimer);
   }
 
   playTone(frequency, duration, attack, type, gainValue) {
@@ -411,7 +443,7 @@ export class Week5AudioEngine {
 
   destroy() {
     this.stopBgm();
-    this.stopMetronome();
+    this.stopMetronome({ resumeBgm: false });
     if (this.endFanfareTimer) {
       window.clearTimeout(this.endFanfareTimer);
       this.endFanfareTimer = null;

@@ -11,7 +11,7 @@
 
 ## 1. 現在の到達点
 - 第5週（反対語ユニット）は実行可能状態。
-- 講師画面 `week5-runner.html` と大画面 `week5-big-screen.html` の同期動作あり。
+- 講師画面 `week5/runner.html` と大画面 `week5/big-screen.html` の同期動作あり。
 - スライド構成は 43枚（`11_theme_title` 〜 `20_end`）。
 - 正解/不正解音は外部音源（`mockup/assets/audio/*.mp3`）使用。
 - 英語スライドは日本語画像を再利用し、画像内英語の重複表示を回避。
@@ -59,8 +59,8 @@ npm install
 npm run week5:dev -- --host 0.0.0.0 --port 4173
 ```
 
-- `http://localhost:4173/week5-runner.html`
-- `http://localhost:4173/week5-big-screen.html`
+- `http://localhost:4173/week5/runner.html`
+- `http://localhost:4173/week5/big-screen.html`
 
 ## 6. テスト
 ```bash

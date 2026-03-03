@@ -10,8 +10,8 @@
   - 端末間同期（PeerJS DataConnection, runner がホスト / big-screen が接続）
 
 ## 2. エントリーポイント
-- 講師画面: `week5-runner.html`
-- 大画面: `week5-big-screen.html`
+- 講師画面: `week5/runner.html`
+- 大画面: `week5/big-screen.html`
 - ルート: `index.html`（runnerへ誘導）
 
 ## 3. 主要モジュール
@@ -91,8 +91,8 @@ npm run week5:dev -- --host 0.0.0.0 --port 4173
 ```
 
 URL:
-- `http://localhost:4173/week5-runner.html`
-- `http://localhost:4173/week5-big-screen.html`
+- `http://localhost:4173/week5/runner.html`
+- `http://localhost:4173/week5/big-screen.html`
 
 ## 8. テスト
 ```bash

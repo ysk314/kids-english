@@ -15,27 +15,27 @@ for (let i = 1; i <= 4; i += 1) {
   targets.push(`12_jp_rhythm_${i}`);
 }
 targets.push("12_jp_rhythm_summary");
-targets.push("12_jp_break_work");
+targets.push("12_jp_rhythm_to_work");
 for (let i = 1; i <= 8; i += 1) {
   targets.push(`13_jp_work_${i}`);
 }
-targets.push("13_jp_break_deep");
+targets.push("13_jp_work_to_deep");
 for (let i = 1; i <= 4; i += 1) {
   targets.push(`14_jp_deep_step_${i}`);
 }
 for (let i = 1; i <= 4; i += 1) {
   targets.push(`15_jp_deep_compare_${i}`);
 }
-targets.push("15_break_en_start");
+targets.push("15_jp_to_en_start");
 for (let i = 1; i <= 4; i += 1) {
   targets.push(`16_en_rhythm_${i}`);
 }
 targets.push("16_en_rhythm_summary");
-targets.push("16_en_break_work");
+targets.push("16_en_rhythm_to_work");
 for (let i = 1; i <= 8; i += 1) {
   targets.push(`17_en_work_${i}`);
 }
-targets.push("17_en_break_deep");
+targets.push("17_en_work_to_deep");
 for (let i = 1; i <= 4; i += 1) {
   targets.push(`18_en_deep_step_${i}`);
 }
