@@ -1,33 +1,6 @@
+import { resolveAppUrl } from "./utils.js";
+
 function noOp() {}
-
-function normalizeAssetPath(pathname) {
-  const input = String(pathname ?? "");
-  const raw = input.startsWith("/") ? input.slice(1) : input;
-  const safeSegments = [];
-  raw.split("/").forEach((segment) => {
-    if (!segment || segment === ".") {
-      return;
-    }
-    if (segment === "..") {
-      if (safeSegments.length > 0) {
-        safeSegments.pop();
-      }
-      return;
-    }
-    safeSegments.push(segment);
-  });
-  return safeSegments.join("/");
-}
-
-function resolveAssetUrl(pathname) {
-  const normalizedPath = normalizeAssetPath(pathname);
-  const viteBase = import.meta.env?.BASE_URL;
-  if (typeof viteBase === "string" && viteBase.length > 0) {
-    const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
-    return new URL(`${normalizedBase}${normalizedPath}`, window.location.href).toString();
-  }
-  return new URL(normalizedPath, window.location.href).toString();
-}
 
 export class Week5AudioEngine {
   constructor() {
@@ -408,10 +381,10 @@ export class Week5AudioEngine {
       return;
     }
 
-    this.correctAudio = new Audio(resolveAssetUrl("mockup/assets/audio/correct.mp3"));
+    this.correctAudio = new Audio(resolveAppUrl("mockup/assets/audio/correct.mp3"));
     this.correctAudio.preload = "auto";
 
-    this.wrongAudio = new Audio(resolveAssetUrl("mockup/assets/audio/wrong.mp3"));
+    this.wrongAudio = new Audio(resolveAppUrl("mockup/assets/audio/wrong.mp3"));
     this.wrongAudio.preload = "auto";
   }
 
@@ -419,9 +392,9 @@ export class Week5AudioEngine {
     if (this.endRollAudio && this.endCymbalAudio) {
       return;
     }
-    this.endRollAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_drum_roll.mp3"));
+    this.endRollAudio = new Audio(resolveAppUrl("mockup/assets/audio/end_drum_roll.mp3"));
     this.endRollAudio.preload = "auto";
-    this.endCymbalAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_cymbal.mp3"));
+    this.endCymbalAudio = new Audio(resolveAppUrl("mockup/assets/audio/end_cymbal.mp3"));
     this.endCymbalAudio.preload = "auto";
   }
 

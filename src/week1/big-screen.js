@@ -1,5 +1,6 @@
 import { WEEK1_SLIDES } from "./lessonData.js";
 import { SessionBus, defaultSessionId } from "../week5/sessionBus.js";
+import { resolveAppUrl } from "../week5/utils.js";
 
 const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("session") || defaultSessionId("week1");
@@ -52,31 +53,6 @@ const DEEP_COMPARE_STEPS = [
   [2, 3],
   [0, 3]
 ];
-
-function resolveAssetUrl(pathname) {
-  const input = String(pathname ?? "");
-  const raw = input.startsWith("/") ? input.slice(1) : input;
-  const safeSegments = [];
-  raw.split("/").forEach((segment) => {
-    if (!segment || segment === ".") {
-      return;
-    }
-    if (segment === "..") {
-      if (safeSegments.length > 0) {
-        safeSegments.pop();
-      }
-      return;
-    }
-    safeSegments.push(segment);
-  });
-  const normalizedPath = safeSegments.join("/");
-  const viteBase = import.meta.env?.BASE_URL;
-  if (typeof viteBase === "string" && viteBase.length > 0) {
-    const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
-    return new URL(`${normalizedBase}${normalizedPath}`, window.location.href).toString();
-  }
-  return new URL(normalizedPath, window.location.href).toString();
-}
 
 function render() {
   const index = Math.min(WEEK1_SLIDES.length - 1, Math.max(0, state.slideIndex || 0));
@@ -197,9 +173,9 @@ function playPointFxSound(type) {
 
 function playEndFanfare() {
   if (!endRollAudio || !endCymbalAudio) {
-    endRollAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_drum_roll.mp3"));
+    endRollAudio = new Audio(resolveAppUrl("mockup/assets/audio/end_drum_roll.mp3"));
     endRollAudio.preload = "auto";
-    endCymbalAudio = new Audio(resolveAssetUrl("mockup/assets/audio/end_cymbal.mp3"));
+    endCymbalAudio = new Audio(resolveAppUrl("mockup/assets/audio/end_cymbal.mp3"));
     endCymbalAudio.preload = "auto";
   }
 

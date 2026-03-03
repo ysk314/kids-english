@@ -49,13 +49,46 @@ function normalizeAppRelativePath(pathname) {
   return safeSegments.join("/");
 }
 
-export function resolveAppPath(pathname) {
-  const normalizedPath = normalizeAppRelativePath(pathname);
-  const href = currentHref();
-  const viteBase = import.meta.env?.BASE_URL;
-  if (typeof viteBase === "string" && viteBase.length > 0) {
-    const normalizedBase = viteBase.endsWith("/") ? viteBase : `${viteBase}/`;
-    return new URL(`${normalizedBase}${normalizedPath}`, href).pathname;
+function inferAppRootPathname(pathname) {
+  const normalizedPathname =
+    typeof pathname === "string" && pathname.startsWith("/") ? pathname : `/${String(pathname ?? "")}`;
+  const markers = ["/week1/", "/week5/", "/mockup/", "/assets/"];
+  let markerIndex = -1;
+
+  markers.forEach((marker) => {
+    const index = normalizedPathname.indexOf(marker);
+    if (index === -1) {
+      return;
+    }
+    if (markerIndex === -1 || index < markerIndex) {
+      markerIndex = index;
+    }
+  });
+
+  if (markerIndex >= 0) {
+    return normalizedPathname.slice(0, markerIndex + 1);
   }
-  return new URL(normalizedPath, href).pathname;
+
+  const lastSlash = normalizedPathname.lastIndexOf("/");
+  if (lastSlash >= 0) {
+    return normalizedPathname.slice(0, lastSlash + 1);
+  }
+
+  return "/";
+}
+
+function resolveAppBaseUrl() {
+  const href = currentHref();
+  const current = new URL(href);
+  const appRootPath = inferAppRootPathname(current.pathname);
+  return new URL(appRootPath, current.origin);
+}
+
+export function resolveAppUrl(pathname) {
+  const normalizedPath = normalizeAppRelativePath(pathname);
+  return new URL(normalizedPath, resolveAppBaseUrl()).toString();
+}
+
+export function resolveAppPath(pathname) {
+  return new URL(resolveAppUrl(pathname)).pathname;
 }
