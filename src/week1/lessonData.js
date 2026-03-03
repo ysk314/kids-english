@@ -1,0 +1,400 @@
+import { resolveAppPath } from "../week5/utils.js";
+
+const screenPath = (id) => resolveAppPath(`mockup/screens/week1/${id}.html`);
+
+const CARD_LABELS = {
+  dog: { jp: "いぬ", en: "dog" },
+  cat: { jp: "ねこ", en: "cat" },
+  rabbit: { jp: "うさぎ", en: "rabbit" },
+  bird: { jp: "とり", en: "bird" },
+  elephant: { jp: "ぞう", en: "elephant" },
+  frog: { jp: "かえる", en: "frog" },
+  octopus: { jp: "たこ", en: "octopus" },
+  orange: { jp: "みかん", en: "orange" },
+  grape: { jp: "ぶどう", en: "grape" },
+  watermelon: { jp: "すいか", en: "watermelon" },
+  pineapple: { jp: "パイナップル", en: "pineapple" },
+  strawberry: { jp: "いちご", en: "strawberry" },
+  bus: { jp: "バス", en: "bus" },
+  taxi: { jp: "タクシー", en: "taxi" },
+  bicycle: { jp: "じてんしゃ", en: "bicycle" },
+  bike: { jp: "バイク", en: "bike" },
+  firetruck: { jp: "しょうぼうしゃ", en: "firetruck" }
+};
+
+const RHYTHM_ROUNDS = [
+  {
+    jpId: "12_jp_rhythm_1",
+    enId: "16_en_rhythm_1",
+    keys: ["dog", "cat", "rabbit", "orange"],
+    jpLines: ["いぬ → どうぶつ", "ねこ → どうぶつ", "うさぎ → どうぶつ", "みかん → くだもの"],
+    jpOdd: "みかん",
+    enLines: ["dog -> animal", "cat -> animal", "rabbit -> animal", "orange -> fruit"],
+    enOdd: "orange"
+  },
+  {
+    jpId: "12_jp_rhythm_2",
+    enId: "16_en_rhythm_2",
+    keys: ["orange", "grape", "watermelon", "bus"],
+    jpLines: ["みかん → くだもの", "ぶどう → くだもの", "すいか → くだもの", "バス → のりもの"],
+    jpOdd: "バス",
+    enLines: ["orange -> fruit", "grape -> fruit", "watermelon -> fruit", "bus -> vehicle"],
+    enOdd: "bus"
+  },
+  {
+    jpId: "12_jp_rhythm_3",
+    enId: "16_en_rhythm_3",
+    keys: ["bus", "taxi", "bicycle", "elephant"],
+    jpLines: ["バス → のりもの", "タクシー → のりもの", "じてんしゃ → のりもの", "ぞう → どうぶつ"],
+    jpOdd: "ぞう",
+    enLines: ["bus -> vehicle", "taxi -> vehicle", "bicycle -> vehicle", "elephant -> animal"],
+    enOdd: "elephant"
+  }
+];
+
+const WORK_ROUNDS = [
+  {
+    jpId: "13_jp_work_1",
+    enId: "17_en_work_1",
+    keys: ["cat", "orange", "dog", "rabbit"],
+    correctIndex: 1,
+    jpAnswer: "みかん",
+    enAnswer: "orange"
+  },
+  {
+    jpId: "13_jp_work_2",
+    enId: "17_en_work_2",
+    keys: ["taxi", "orange", "grape", "pineapple"],
+    correctIndex: 0,
+    jpAnswer: "タクシー",
+    enAnswer: "taxi"
+  },
+  {
+    jpId: "13_jp_work_3",
+    enId: "17_en_work_3",
+    keys: ["bus", "taxi", "bike", "bird"],
+    correctIndex: 3,
+    jpAnswer: "とり",
+    enAnswer: "bird"
+  },
+  {
+    jpId: "13_jp_work_4",
+    enId: "17_en_work_4",
+    keys: ["elephant", "cat", "bicycle", "dog"],
+    correctIndex: 2,
+    jpAnswer: "じてんしゃ",
+    enAnswer: "bicycle"
+  },
+  {
+    jpId: "13_jp_work_5",
+    enId: "17_en_work_5",
+    keys: ["grape", "rabbit", "watermelon", "orange"],
+    correctIndex: 1,
+    jpAnswer: "うさぎ",
+    enAnswer: "rabbit"
+  },
+  {
+    jpId: "13_jp_work_6",
+    enId: "17_en_work_6",
+    keys: ["pineapple", "bus", "taxi", "bicycle"],
+    correctIndex: 0,
+    jpAnswer: "パイナップル",
+    enAnswer: "pineapple"
+  }
+];
+
+const DEEP_STEPS = [
+  {
+    jpId: "14_jp_deep_step_1",
+    enId: "18_en_deep_step_1",
+    jpTitle: "こんどはどれがなかまはずれ？",
+    enTitle: "Which one is odd now?",
+    jpAim: "カテゴリではなく色で見た時の仲間を意識させる。",
+    enAim: "Notice the odd one by color instead of category.",
+    jpScript:
+      "せんせい「のりものは2まい、くだものは2まい。なかまはずれはいない？ いや、べつのことにも ちゅうもくしてみよう！ そう、いろだね。バスはきいろ、タクシーはきいろ、パイナップルはきいろ。ぶどうはむらさき。なかまはずれは ぶどう！」",
+    enScript:
+      'Teacher: "We have two vehicles and two fruits. No odd one? Let us change our viewpoint. By color, bus, taxi, and pineapple are yellow. Grape is purple. The odd one is grape!"',
+    correctIndices: [3]
+  },
+  {
+    jpId: "14_jp_deep_step_2",
+    enId: "18_en_deep_step_2",
+    jpTitle: "こんどはどれがなかまはずれ？",
+    enTitle: "Which one is odd now?",
+    jpAim: "同じカードでも観点を変えると答えが変わることを体験する。",
+    enAim: "Experience how answers change when viewpoint changes.",
+    jpScript:
+      "せんせい「どうぶつは2まい、くだものは1まい、のりものは1まい。みかたを いろに かえると、いちご・しょうぼうしゃ・たこは あか。うさぎだけ ちがういろ。なかまはずれは うさぎ！」",
+    enScript:
+      'Teacher: "We have two animals, one fruit, and one vehicle. By color, strawberry, firetruck, and octopus are red. Rabbit is different. The odd one is rabbit!"',
+    correctIndices: [0]
+  },
+  {
+    jpId: "14_jp_deep_step_3",
+    enId: "18_en_deep_step_3",
+    jpTitle: "こんどはどれがなかまはずれ？",
+    enTitle: "Which one is odd now?",
+    jpAim: "色の違いを短い理由で言えるようにする。",
+    enAim: "Explain color differences in a short phrase.",
+    jpScript:
+      "せんせい「どうぶつは2まい、くだものは1まい、のりものは1まい。いろでみると、とり・かえる・バイクは みどり。パイナップルだけ きいろ。なかまはずれは パイナップル！」",
+    enScript:
+      'Teacher: "We have two animals, one fruit, and one vehicle. By color, bird, frog, and bike are green. Pineapple is yellow. The odd one is pineapple!"',
+    correctIndices: [1]
+  },
+  {
+    jpId: "14_jp_deep_step_4",
+    enId: "18_en_deep_step_4",
+    jpTitle: "これはこたえは１つじゃないかも",
+    enTitle: "There may be more than one answer",
+    jpAim: "答えが1つとは限らないことを受け止め、理由の違いに気づく。",
+    enAim: "Accept that there can be multiple answers and reasons.",
+    jpScript:
+      "せんせい「これは こたえが ひとつじゃないかも。どうしてか いってみよう。いろでみると、パイナップルだけ きいろ。のりものか くだものでみると、しょうぼうしゃだけ のりもの。みかたで こたえがかわるね。」",
+    enScript:
+      'Teacher: "This may have more than one answer. By color, pineapple is the only yellow card. By category, firetruck is the only vehicle. The answer changes with your viewpoint."',
+    correctIndices: [0, 2]
+  }
+];
+
+export const FLOW_STEPS = [
+  { id: "jp_rhythm", label: "1 日本語リズム本題" },
+  { id: "jp_work", label: "2 日本語本番" },
+  { id: "jp_deep", label: "3 日本語深掘り" },
+  { id: "en_rhythm", label: "4 英語リズム本題" },
+  { id: "en_work", label: "5 英語本番" },
+  { id: "en_deep", label: "6 英語深掘り" }
+];
+
+export const LESSON_GOALS = [
+  {
+    id: "1",
+    text: "なかまで くらべて なかまはずれを みつける。"
+  },
+  {
+    id: "2",
+    text: "みかたを かえて べつの なかまわけも ためす。"
+  },
+  {
+    id: "3",
+    text: "英語でも同じ活動をリズムよく進める。"
+  }
+];
+
+function labelsFromKeys(keys, lang) {
+  return keys.map((key) => CARD_LABELS[key]?.[lang] ?? key);
+}
+
+function createDividerSlide({ id, stepId, modeLabel, title, aim, script }) {
+  return {
+    id,
+    phase: "divider",
+    stepId,
+    kind: "divider",
+    bpm: null,
+    modeLabel,
+    screenPath: screenPath(id),
+    hint: {
+      title,
+      aim,
+      script
+    }
+  };
+}
+
+function createThemeTitleSlide() {
+  return {
+    id: "11_theme_title",
+    phase: "title",
+    stepId: "jp_rhythm",
+    kind: "divider",
+    bpm: null,
+    modeLabel: "授業テーマ",
+    screenPath: screenPath("11_theme_title"),
+    hint: {
+      title: "だい1しゅう なかまはずれ",
+      aim: "週テーマを示し、楽しく仲間外れを見つける活動へ導入する。",
+      script: "せんせい「きょうは なかまはずれを たのしく みつけよう！」"
+    }
+  };
+}
+
+function createRhythmSlides(lang) {
+  const isJp = lang === "jp";
+  return RHYTHM_ROUNDS.map((item, index) => ({
+    id: isJp ? item.jpId : item.enId,
+    phase: lang,
+    stepId: `${lang}_rhythm`,
+    kind: "rhythm",
+    bpm: 90,
+    modeLabel: isJp ? "日本語リズム本題" : "英語リズム本題",
+    screenPath: screenPath(isJp ? item.jpId : item.enId),
+    hint: {
+      title: isJp ? `リズム本題 ${index + 1}/3` : `English Rhythm ${index + 1}/3`,
+      aim: isJp ? "名詞4枚をリズムで分類して、仲間外れを即答する。" : "Classify four nouns in rhythm and identify the odd one quickly.",
+      script: isJp
+        ? `せんせい「${item.jpLines.join("、")}。なかまはずれは ${item.jpOdd}！」`
+        : `Teacher: "${item.enLines.join(", ")}. Odd one is ${item.enOdd}."`
+    }
+  }));
+}
+
+function createWorkSlides(lang) {
+  const isJp = lang === "jp";
+  return WORK_ROUNDS.map((item, index) => ({
+    id: isJp ? item.jpId : item.enId,
+    phase: lang,
+    stepId: `${lang}_work`,
+    kind: "work",
+    bpm: 90,
+    modeLabel: isJp ? "日本語本番" : "英語本番",
+    screenPath: screenPath(isJp ? item.jpId : item.enId),
+    hint: {
+      title: isJp ? `リズムよく、タップしよう！（${index + 1}/６）` : `Tap with rhythm! (${index + 1}/6)`,
+      aim: isJp ? "4枚を見て、テンポよくなかまじゃないものを選ぶ。" : "Choose the odd one in rhythm from four cards.",
+      script: isJp
+        ? `せんせい「リズムよく タップしよう。なかまじゃないのは どれ？ こたえは ${item.jpAnswer}。」`
+        : `Teacher: "Tap in rhythm. Which one is odd? Answer: ${item.enAnswer}."`
+    },
+    ask: isJp ? "なかまはずれは どれ？" : "Which one is odd?",
+    target: isJp ? "なかまはずれ" : "odd one",
+    choices: labelsFromKeys(item.keys, lang),
+    correctIndex: item.correctIndex
+  }));
+}
+
+function createDeepStepSlides(lang) {
+  const isJp = lang === "jp";
+  return DEEP_STEPS.map((item) => ({
+    id: isJp ? item.jpId : item.enId,
+    phase: lang,
+    stepId: `${lang}_deep`,
+    kind: "deep_step",
+    bpm: null,
+    modeLabel: isJp ? "日本語深掘り" : "英語深掘り",
+    screenPath: screenPath(isJp ? item.jpId : item.enId),
+    hint: {
+      title: isJp ? item.jpTitle : item.enTitle,
+      aim: isJp ? item.jpAim : item.enAim,
+      script: isJp ? item.jpScript : item.enScript
+    },
+    correctIndices: item.correctIndices
+  }));
+}
+
+function createDeepMakeSlide(lang) {
+  if (lang === "jp") {
+    return {
+      id: "15_jp_deep_make_1",
+      phase: "jp",
+      stepId: "jp_deep",
+      kind: "deep_step",
+      bpm: null,
+      modeLabel: "日本語深掘り",
+      screenPath: screenPath("15_jp_deep_make_1"),
+      hint: {
+        title: "じぶんでもクイズをつくろう！",
+        aim: "子ども自身が3+1の問題を作る。",
+        script: "せんせい「じぶんでもクイズをつくろう！ なかま３つ、なかまはずれ１つでクイズを作ろう」"
+      }
+    };
+  }
+
+  return {
+    id: "19_en_deep_make_1",
+    phase: "en",
+    stepId: "en_deep",
+    kind: "deep_step",
+    bpm: null,
+    modeLabel: "英語深掘り",
+    screenPath: screenPath("19_en_deep_make_1"),
+    hint: {
+      title: "Make your own quiz!",
+      aim: "Let children create their own 3+1 odd-one-out problem in English.",
+      script: 'Teacher: "Make your own quiz. Choose three plus one odd card."'
+    }
+  };
+}
+
+function createEndSlide() {
+  return {
+    id: "20_end",
+    phase: "end",
+    stepId: "en_deep",
+    kind: "end",
+    bpm: null,
+    modeLabel: "終了",
+    screenPath: screenPath("20_end"),
+    hint: {
+      title: "授業終了",
+      aim: "日本語と英語の活動を振り返って締める。",
+      script: 'Teacher: "Great job today!"'
+    }
+  };
+}
+
+export function buildWeek1Slides() {
+  return [
+    createThemeTitleSlide(),
+    ...createRhythmSlides("jp"),
+    createDividerSlide({
+      id: "12_jp_rhythm_to_work",
+      stepId: "jp_work",
+      modeLabel: "日本語本番",
+      title: "リズムよく、タップしよう！",
+      aim: "本番6問へ進み、タイミングよくタップする活動を共有する。",
+      script: "せんせい「リズムよく、タップしよう！ なかまじゃないカードをタイミングよくタップしよう！」"
+    }),
+    ...createWorkSlides("jp"),
+    createDividerSlide({
+      id: "13_jp_work_to_deep",
+      stepId: "jp_deep",
+      modeLabel: "日本語深掘り",
+      title: "みかたを かえてみよう！",
+      aim: "これまでと違う観点に注目し、答え方を広げる。",
+      script: "せんせい「みかたを かえてみよう！ いままでとはちがうことに　ちゅうもくしよう」"
+    }),
+    ...createDeepStepSlides("jp"),
+    createDeepMakeSlide("jp"),
+    createDividerSlide({
+      id: "15_jp_to_en_start",
+      stepId: "en_rhythm",
+      modeLabel: "英語導入",
+      title: "Get Ready",
+      aim: "日本語で行った活動を英語パートへ切り替える。",
+      script: "せんせい「日本語パートは これで おしまい！ English Part Start!」"
+    }),
+    ...createRhythmSlides("en"),
+    createDividerSlide({
+      id: "16_en_rhythm_to_work",
+      stepId: "en_work",
+      modeLabel: "英語本番",
+      title: "Tap with rhythm!",
+      aim: "Move from English rhythm into challenge questions.",
+      script: 'Teacher: "Tap the odd one in time!"'
+    }),
+    ...createWorkSlides("en"),
+    createDividerSlide({
+      id: "17_en_work_to_deep",
+      stepId: "en_deep",
+      modeLabel: "英語深掘り",
+      title: "Let's change our viewpoint!",
+      aim: "Switch viewpoint and solve by color in English.",
+      script: 'Teacher: "Now look from a different angle."'
+    }),
+    ...createDeepStepSlides("en"),
+    createDeepMakeSlide("en"),
+    createEndSlide()
+  ];
+}
+
+export const WEEK1_SLIDES = buildWeek1Slides();
+
+export function findSlideIndexById(slideId) {
+  return WEEK1_SLIDES.findIndex((slide) => slide.id === slideId);
+}
+
+export function stepIndexForSlide(slide) {
+  return FLOW_STEPS.findIndex((step) => step.id === slide.stepId);
+}
