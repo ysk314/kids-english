@@ -555,12 +555,15 @@ function stopBeatSignal() {
 
 function publishBeatSignal(step16, bpm, slideId, { at = Date.now() } = {}) {
   const normalizedStep = ((Number(step16) || 0) % 16 + 16) % 16;
-  markLatestBeat(normalizedStep, at);
+  const beatAt = Number.isFinite(at) ? at : Date.now();
+  markLatestBeat(normalizedStep, beatAt);
   bus.publishSignal("beat", {
-    id: `${Date.now()}-${step16}`,
+    id: `${Date.now()}-${normalizedStep}`,
     step16: normalizedStep,
     bpm,
-    slideId
+    slideId,
+    at: beatAt,
+    sentAt: Date.now()
   });
 }
 

@@ -672,6 +672,25 @@ function applyBeatLinkedVisuals(doc, slide, step16) {
   clearDeepCompareBeatSync(doc);
 }
 
+function normalizeStep16(step16) {
+  return ((Number(step16) || 0) % 16 + 16) % 16;
+}
+
+function estimateBeatStepNow(payload) {
+  const baseStep = normalizeStep16(payload?.step16);
+  const bpm = Number(payload?.bpm);
+  const beatAt = Number(payload?.at);
+  if (!Number.isFinite(bpm) || bpm <= 0 || !Number.isFinite(beatAt)) {
+    return baseStep;
+  }
+
+  const stepMs = Math.max(30, Math.floor(60_000 / bpm / 4));
+  const elapsedMs = Date.now() - beatAt;
+  const clampedElapsedMs = Math.max(-stepMs * 2, Math.min(elapsedMs, stepMs * 64));
+  const offsetSteps = Math.round(clampedElapsedMs / stepMs);
+  return normalizeStep16(baseStep + offsetSteps);
+}
+
 function applySlideInteraction() {
   const doc = getFrameDoc();
   const slide = WEEK5_SLIDES[Math.min(WEEK5_SLIDES.length - 1, Math.max(0, state.slideIndex || 0))];
@@ -731,7 +750,7 @@ bus.onSignal((signal) => {
     return;
   }
   lastBeatSignalId = signal.payload.id;
-  latestBeatStep16 = Number(signal.payload.step16) || 0;
+  latestBeatStep16 = estimateBeatStepNow(signal.payload);
   const doc = getFrameDoc();
   if (!doc) {
     return;

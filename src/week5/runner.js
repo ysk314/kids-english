@@ -503,12 +503,16 @@ function stopBeatSignal() {
   }
 }
 
-function publishBeatSignal(step16, bpm, slideId) {
+function publishBeatSignal(step16, bpm, slideId, { at = Date.now() } = {}) {
+  const normalizedStep = ((Number(step16) || 0) % 16 + 16) % 16;
+  const beatAt = Number.isFinite(at) ? at : Date.now();
   bus.publishSignal("beat", {
-    id: `${Date.now()}-${step16}`,
-    step16: step16 % 16,
+    id: `${Date.now()}-${normalizedStep}`,
+    step16: normalizedStep,
     bpm,
-    slideId
+    slideId,
+    at: beatAt,
+    sentAt: Date.now()
   });
 }
 
@@ -951,7 +955,9 @@ async function setupControls() {
       if (!slide || typeof slide.bpm !== "number" || slide.bpm <= 0) {
         return;
       }
-      publishBeatSignal(beat.step16, beat.bpm, slide.id);
+      publishBeatSignal(beat.step16, beat.bpm, slide.id, {
+        at: beat.at
+      });
     });
     beatListenerBound = true;
   }
