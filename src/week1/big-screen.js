@@ -49,6 +49,7 @@ const POINT_FX_DURATION_MS = 1900;
 const END_ROLL_START_DELAY_MS = 3000;
 const END_CYMBAL_DELAY_MS = 1300;
 const CLOCKWISE_ORDER_2X2 = [0, 1, 3, 2];
+const REMOTE_BEAT_PHASE_SHIFT_STEPS = isEmbed ? 0 : 4;
 // deep-item index:
 // 0 short pencil, 1 long pencil, 2 snake, 3 train
 const DEEP_COMPARE_STEPS = [
@@ -910,7 +911,9 @@ bus.onSignal((signal) => {
     return;
   }
   lastBeatSignalId = signal.payload.id;
-  latestBeatStep16 = estimateBeatStepNow(signal.payload);
+  latestBeatStep16 = normalizeStep16(
+    estimateBeatStepNow(signal.payload) + REMOTE_BEAT_PHASE_SHIFT_STEPS
+  );
   const doc = getFrameDoc();
   if (!doc) {
     return;

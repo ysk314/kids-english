@@ -108,7 +108,7 @@ const DEEP_STEPS = [
     jpId: "14_jp_deep_step_1",
     enId: "18_en_deep_step_1",
     jpTitle: "こんどはどれがなかまはずれ？",
-    enTitle: "Which one is odd now?",
+    enTitle: "Which one is odd?",
     jpAim: "カテゴリではなく色で見た時の仲間を意識させる。",
     enAim: "Notice the odd one by color instead of category.",
     jpScript:
@@ -121,7 +121,7 @@ const DEEP_STEPS = [
     jpId: "14_jp_deep_step_2",
     enId: "18_en_deep_step_2",
     jpTitle: "こんどはどれがなかまはずれ？",
-    enTitle: "Which one is odd now?",
+    enTitle: "Which one is odd?",
     jpAim: "同じカードでも観点を変えると答えが変わることを体験する。",
     enAim: "Experience how answers change when viewpoint changes.",
     jpScript:
@@ -134,7 +134,7 @@ const DEEP_STEPS = [
     jpId: "14_jp_deep_step_3",
     enId: "18_en_deep_step_3",
     jpTitle: "こんどはどれがなかまはずれ？",
-    enTitle: "Which one is odd now?",
+    enTitle: "Which one is odd?",
     jpAim: "色の違いを短い理由で言えるようにする。",
     enAim: "Explain color differences in a short phrase.",
     jpScript:

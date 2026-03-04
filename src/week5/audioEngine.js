@@ -153,14 +153,21 @@ export class Week5AudioEngine {
     if (!this.enabled) {
       return;
     }
-    this.playClip(this.correctAudio);
+    this.playClip(this.correctAudio, () => {
+      this.playTone(880, 0.08, 0.008, "square", 0.08);
+      window.setTimeout(() => this.playTone(1240, 0.09, 0.008, "triangle", 0.08), 65);
+      window.setTimeout(() => this.playTone(1560, 0.11, 0.008, "sine", 0.06), 135);
+    });
   }
 
   playIncorrect() {
     if (!this.enabled) {
       return;
     }
-    this.playClip(this.wrongAudio);
+    this.playClip(this.wrongAudio, () => {
+      this.playTone(360, 0.09, 0.01, "sawtooth", 0.09);
+      window.setTimeout(() => this.playTone(250, 0.12, 0.01, "square", 0.07), 80);
+    });
   }
 
   playToggle() {
@@ -398,8 +405,9 @@ export class Week5AudioEngine {
     this.endCymbalAudio.preload = "auto";
   }
 
-  playClip(audio) {
+  playClip(audio, onFallback = noOp) {
     if (!audio) {
+      onFallback();
       return;
     }
 
@@ -407,10 +415,12 @@ export class Week5AudioEngine {
       audio.currentTime = 0;
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {});
+        playPromise.catch(() => {
+          onFallback();
+        });
       }
     } catch (_error) {
-      // no-op
+      onFallback();
     }
   }
 
