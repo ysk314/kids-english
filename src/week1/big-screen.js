@@ -4,7 +4,8 @@ import { resolveAppUrl } from "../week5/utils.js";
 
 const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("session") || defaultSessionId("week1");
-const isEmbed = params.get("embed") === "1";
+const embedParam = params.get("embed") === "1";
+const isEmbed = embedParam && window.self !== window.top;
 
 const bus = new SessionBus(sessionId, {
   role: "bigscreen",
