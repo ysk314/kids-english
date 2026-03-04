@@ -35,6 +35,38 @@ body.week5-runner-page {
   font-size: 11px;
 }
 
+.chip-sync-status {
+  display: grid;
+  gap: 2px;
+  min-width: 300px;
+  max-width: 420px;
+  border-radius: 14px;
+}
+
+.chip-sync-status [data-testid="sync-status-line"] {
+  font-size: 11px;
+  line-height: 1.2;
+  color: #273257;
+}
+
+.chip-sync-status [data-testid="sync-status-line"].ok {
+  color: #1b8f59;
+}
+
+.chip-sync-status [data-testid="sync-status-line"].warn {
+  color: #b15a2c;
+}
+
+.chip-sync-status [data-testid="sync-status-sub"] {
+  display: block;
+  font-size: 10px;
+  line-height: 1.15;
+  color: #5d6789;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .runner-head-panel {
   margin-bottom: 6px;
   padding: 8px 10px;
@@ -304,34 +336,11 @@ body.week5-runner-page {
   border: 1px solid #d7deef;
   border-radius: 10px;
   padding: 6px;
-  display: grid;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
   gap: 4px;
   background: #f7f9ff;
-}
-
-.sync-diagnostics-main,
-.sync-diagnostics-sub {
-  margin: 0;
-  line-height: 1.25;
-}
-
-.sync-diagnostics-main {
-  font-size: 11px;
-  font-weight: 800;
-  color: #273257;
-}
-
-.sync-diagnostics-main.ok {
-  color: #1b8f59;
-}
-
-.sync-diagnostics-main.warn {
-  color: #b15a2c;
-}
-
-.sync-diagnostics-sub {
-  font-size: 10px;
-  color: #5d6789;
 }
 
 .btn.btn-sync-reconnect {
@@ -716,5 +725,14 @@ body.embed-bigscreen .bigscreen-reconnect-btn {
 @media (max-width: 1024px) {
   .runner-layout {
     grid-template-columns: 1fr;
+  }
+
+  .chip-sync-status {
+    min-width: 240px;
+    max-width: 100%;
+  }
+
+  .chip-sync-status [data-testid="sync-status-sub"] {
+    display: none;
   }
 }
