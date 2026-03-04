@@ -22,6 +22,19 @@ function buildRunnerPeerId(sessionId) {
   return `${STORAGE_PREFIX}-${sanitizeSessionId(sessionId)}-runner`;
 }
 
+function formatPeerError(error) {
+  if (!error) {
+    return "";
+  }
+  if (typeof error.type === "string" && error.type) {
+    return error.type;
+  }
+  if (typeof error.message === "string" && error.message) {
+    return error.message;
+  }
+  return "unknown";
+}
+
 async function loadPeerConstructor() {
   if (typeof window === "undefined") {
     return null;
@@ -66,6 +79,22 @@ export class SessionBus {
     this.stateHandlers = new Set();
     this.presenceHandlers = new Set();
     this.signalHandlers = new Set();
+    this.statusHandlers = new Set();
+    this.diagnostics = {
+      role: this.role,
+      remoteEnabled: this.remoteEnabled,
+      peerState: this.remoteEnabled ? "initializing" : "disabled",
+      remoteState: this.remoteEnabled ? (this.role === "runner" ? "waiting" : "connecting") : "disabled",
+      runnerConnections: 0,
+      hasRemoteConnection: false,
+      lastInboundAt: 0,
+      lastOutboundAt: 0,
+      lastError: "",
+      lastErrorAt: 0,
+      lastReconnectAt: 0,
+      reconnectCount: 0,
+      updatedAt: Date.now()
+    };
 
     this.handleStorage = this.handleStorage.bind(this);
     this.handleChannelMessage = this.handleChannelMessage.bind(this);
@@ -76,6 +105,35 @@ export class SessionBus {
     if (this.remoteEnabled) {
       this.setupRemoteSync().catch(() => {});
     }
+  }
+
+  updateDiagnostics(patch = {}) {
+    this.diagnostics = {
+      ...this.diagnostics,
+      ...patch,
+      updatedAt: Date.now()
+    };
+    this.statusHandlers.forEach((handler) => {
+      try {
+        handler({ ...this.diagnostics });
+      } catch {
+        // no-op
+      }
+    });
+  }
+
+  getDiagnostics() {
+    return { ...this.diagnostics };
+  }
+
+  onDiagnostics(handler) {
+    this.statusHandlers.add(handler);
+    try {
+      handler({ ...this.diagnostics });
+    } catch {
+      // no-op
+    }
+    return () => this.statusHandlers.delete(handler);
   }
 
   getLatestState() {
@@ -186,10 +244,22 @@ export class SessionBus {
       return;
     }
     this.setupRemoteSyncPending = true;
+    this.updateDiagnostics({
+      remoteEnabled: this.remoteEnabled,
+      peerState: "loading",
+      remoteState: this.role === "runner" ? "waiting" : "connecting"
+    });
     try {
       const PeerCtor = await loadPeerConstructor();
       if (!PeerCtor) {
         this.remoteEnabled = false;
+        this.updateDiagnostics({
+          remoteEnabled: false,
+          peerState: "unavailable",
+          remoteState: "disabled",
+          hasRemoteConnection: false,
+          runnerConnections: this.runnerConnections.size
+        });
         return;
       }
 
@@ -203,6 +273,10 @@ export class SessionBus {
       this.peer.on("open", () => {
         this.peerReady = true;
         this.clearReconnectTimer();
+        this.updateDiagnostics({
+          peerState: "open",
+          remoteState: this.role === "runner" ? (this.runnerConnections.size > 0 ? "connected" : "waiting") : "connecting"
+        });
         if (this.role === "bigscreen") {
           this.connectToRunner();
         }
@@ -218,11 +292,21 @@ export class SessionBus {
 
       this.peer.on("disconnected", () => {
         this.peerReady = false;
+        this.updateDiagnostics({
+          peerState: "disconnected",
+          remoteState: "reconnecting",
+          hasRemoteConnection: false
+        });
         this.scheduleReconnect();
       });
 
       this.peer.on("close", () => {
         this.peerReady = false;
+        this.updateDiagnostics({
+          peerState: "closed",
+          remoteState: "reconnecting",
+          hasRemoteConnection: false
+        });
         this.scheduleReconnect();
       });
 
@@ -236,6 +320,13 @@ export class SessionBus {
           this.peer = null;
         }
         this.peerReady = false;
+        this.updateDiagnostics({
+          peerState: "error",
+          remoteState: "reconnecting",
+          lastError: formatPeerError(error),
+          lastErrorAt: Date.now(),
+          hasRemoteConnection: false
+        });
         this.scheduleReconnect();
       });
     } finally {
@@ -246,6 +337,10 @@ export class SessionBus {
   attachRunnerConnection(connection) {
     connection.on("open", () => {
       this.runnerConnections.set(connection.peer, connection);
+      this.updateDiagnostics({
+        runnerConnections: this.runnerConnections.size,
+        remoteState: "connected"
+      });
       const latest = this.getLatestState();
       if (latest?.type === "state") {
         try {
@@ -262,6 +357,10 @@ export class SessionBus {
 
     const cleanup = () => {
       this.runnerConnections.delete(connection.peer);
+      this.updateDiagnostics({
+        runnerConnections: this.runnerConnections.size,
+        remoteState: this.runnerConnections.size > 0 ? "connected" : "waiting"
+      });
     };
     connection.on("close", cleanup);
     connection.on("error", cleanup);
@@ -273,9 +372,17 @@ export class SessionBus {
       return;
     }
     if (this.remoteConnection?.open) {
+      this.updateDiagnostics({
+        hasRemoteConnection: true,
+        remoteState: "connected"
+      });
       return;
     }
 
+    this.updateDiagnostics({
+      hasRemoteConnection: false,
+      remoteState: "connecting"
+    });
     const connection = this.peer.connect(this.runnerPeerId, {
       reliable: true
     });
@@ -292,6 +399,10 @@ export class SessionBus {
           // no-op
         }
         this.remoteConnection = null;
+        this.updateDiagnostics({
+          hasRemoteConnection: false,
+          remoteState: "reconnecting"
+        });
         this.scheduleReconnect();
       }
     }, 5_000);
@@ -299,6 +410,10 @@ export class SessionBus {
     connection.on("open", () => {
       this.clearConnectTimeout();
       this.clearReconnectTimer();
+      this.updateDiagnostics({
+        hasRemoteConnection: true,
+        remoteState: "connected"
+      });
     });
 
     connection.on("data", (rawEnvelope) => {
@@ -310,6 +425,10 @@ export class SessionBus {
       if (this.remoteConnection === connection) {
         this.remoteConnection = null;
       }
+      this.updateDiagnostics({
+        hasRemoteConnection: false,
+        remoteState: "reconnecting"
+      });
       this.scheduleReconnect();
     };
     connection.on("close", recover);
@@ -320,6 +439,11 @@ export class SessionBus {
     if (this.closed || this.reconnectTimer || !this.remoteEnabled) {
       return;
     }
+    this.updateDiagnostics({
+      remoteState: "reconnecting",
+      lastReconnectAt: Date.now(),
+      reconnectCount: (this.diagnostics.reconnectCount || 0) + 1
+    });
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = null;
       if (this.closed || !this.remoteEnabled) {
@@ -366,6 +490,7 @@ export class SessionBus {
       return;
     }
 
+    let sent = false;
     if (this.role === "runner") {
       this.runnerConnections.forEach((connection) => {
         if (!connection?.open) {
@@ -373,10 +498,14 @@ export class SessionBus {
         }
         try {
           connection.send(envelope);
+          sent = true;
         } catch {
           // no-op
         }
       });
+      if (sent) {
+        this.updateDiagnostics({ lastOutboundAt: Date.now() });
+      }
       return;
     }
 
@@ -385,8 +514,12 @@ export class SessionBus {
     }
     try {
       this.remoteConnection.send(envelope);
+      sent = true;
     } catch {
       // no-op
+    }
+    if (sent) {
+      this.updateDiagnostics({ lastOutboundAt: Date.now() });
     }
   }
 
@@ -405,8 +538,59 @@ export class SessionBus {
     } else if (envelope.type === "signal") {
       localStorage.setItem(this.signalStorageKey, JSON.stringify(envelope));
     }
+    this.updateDiagnostics({
+      lastInboundAt: Date.now(),
+      remoteState: "connected"
+    });
     this.channel?.postMessage(envelope);
     this.dispatchEnvelope(envelope);
+  }
+
+  forceReconnect() {
+    if (this.closed) {
+      return false;
+    }
+    this.remoteEnabled = true;
+    this.clearConnectTimeout();
+    this.clearReconnectTimer();
+    if (this.remoteConnection) {
+      try {
+        this.remoteConnection.close();
+      } catch {
+        // no-op
+      }
+      this.remoteConnection = null;
+    }
+    this.runnerConnections.forEach((connection) => {
+      try {
+        connection.close();
+      } catch {
+        // no-op
+      }
+    });
+    this.runnerConnections.clear();
+    if (this.peer) {
+      try {
+        this.peer.destroy();
+      } catch {
+        // no-op
+      }
+      this.peer = null;
+    }
+    this.peerReady = false;
+    this.updateDiagnostics({
+      remoteEnabled: true,
+      peerState: "restarting",
+      remoteState: "reconnecting",
+      hasRemoteConnection: false,
+      runnerConnections: 0,
+      lastReconnectAt: Date.now(),
+      reconnectCount: (this.diagnostics.reconnectCount || 0) + 1
+    });
+    this.setupRemoteSync().catch(() => {
+      this.scheduleReconnect();
+    });
+    return true;
   }
 
   close() {
@@ -433,6 +617,13 @@ export class SessionBus {
       this.peer.destroy();
       this.peer = null;
     }
+    this.updateDiagnostics({
+      remoteEnabled: false,
+      peerState: "closed",
+      remoteState: "closed",
+      hasRemoteConnection: false,
+      runnerConnections: 0
+    });
   }
 }
 

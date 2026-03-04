@@ -126,6 +126,9 @@ const elements = {
   lessonResetButton: document.querySelector("[data-testid='lesson-reset-btn']"),
   openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
   soundButton: document.querySelector("[data-testid='sound-btn']"),
+  syncStatusLine: document.querySelector("[data-testid='sync-status-line']"),
+  syncStatusSub: document.querySelector("[data-testid='sync-status-sub']"),
+  syncReconnectButton: document.querySelector("[data-testid='sync-reconnect-btn']"),
   subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
   subNextButton: document.querySelector("[data-testid='sub-next-btn']")
 };
@@ -138,6 +141,7 @@ let beatSignalTimer = null;
 let beatSignalStep = 0;
 let beatSignalKey = "";
 let endRevealTimer = null;
+let syncDiagnostics = bus.getDiagnostics();
 const END_CYMBAL_DELAY_MS = 1300;
 let beatListenerBound = false;
 const BIGSCREEN_BASE_WIDTH = 1512;
@@ -367,6 +371,87 @@ function updateMirrorChip() {
   const connected = nowMs() - mirrorLastSeenAt < 4_500;
   elements.mirrorChip.textContent = connected ? "Mirror Connected" : "Mirror Waiting";
   elements.mirrorChip.classList.toggle("hot", connected);
+}
+
+function formatElapsedFrom(ts) {
+  if (!Number.isFinite(ts) || ts <= 0) {
+    return "-";
+  }
+  const diffSec = Math.max(0, Math.floor((nowMs() - ts) / 1000));
+  if (diffSec < 60) {
+    return `${diffSec}s前`;
+  }
+  const min = Math.floor(diffSec / 60);
+  const sec = diffSec % 60;
+  return `${min}m${sec}s前`;
+}
+
+function labelPeerState(peerState) {
+  switch (peerState) {
+    case "open":
+      return "OK";
+    case "loading":
+      return "読み込み中";
+    case "restarting":
+      return "再起動中";
+    case "reconnecting":
+    case "disconnected":
+      return "再接続中";
+    case "unavailable":
+      return "利用不可";
+    case "error":
+      return "エラー";
+    case "closed":
+      return "停止";
+    default:
+      return peerState || "-";
+  }
+}
+
+function labelRemoteState(remoteState) {
+  switch (remoteState) {
+    case "connected":
+      return "接続中";
+    case "connecting":
+      return "接続中...";
+    case "waiting":
+      return "待機中";
+    case "reconnecting":
+      return "再接続中";
+    case "disabled":
+      return "OFF";
+    case "closed":
+      return "停止";
+    default:
+      return remoteState || "-";
+  }
+}
+
+function updateSyncDiagnostics() {
+  if (!elements.syncStatusLine || !elements.syncStatusSub) {
+    return;
+  }
+  const diagnostics = syncDiagnostics || bus.getDiagnostics();
+  const mirrorConnected = nowMs() - mirrorLastSeenAt < 4_500;
+  const displayRemoteState = mirrorConnected ? "connected" : diagnostics.remoteState;
+  const remoteText = labelRemoteState(displayRemoteState);
+  const peerText = labelPeerState(diagnostics.peerState);
+  elements.syncStatusLine.textContent = `同期: ${remoteText} / Peer: ${peerText}`;
+  elements.syncStatusLine.classList.toggle("ok", displayRemoteState === "connected");
+  elements.syncStatusLine.classList.toggle("warn", displayRemoteState !== "connected");
+
+  const connectionCount =
+    typeof diagnostics.runnerConnections === "number" ? diagnostics.runnerConnections : 0;
+  const lastIn = formatElapsedFrom(diagnostics.lastInboundAt);
+  const lastOut = formatElapsedFrom(diagnostics.lastOutboundAt);
+  const errorText = diagnostics.lastError ? diagnostics.lastError : "なし";
+  elements.syncStatusSub.textContent = `接続台数:${connectionCount} 受信:${lastIn} 送信:${lastOut} err:${errorText}`;
+
+  if (elements.syncReconnectButton) {
+    const busy = diagnostics.peerState === "loading" || diagnostics.peerState === "restarting";
+    elements.syncReconnectButton.disabled = busy;
+    elements.syncReconnectButton.textContent = busy ? "同期を再接続中..." : "同期を再接続";
+  }
 }
 
 function updateSoundButtons() {
@@ -923,6 +1008,20 @@ async function setupControls() {
     window.open(url, "week1-bigscreen", "noopener,noreferrer");
   });
 
+  if (elements.syncReconnectButton) {
+    elements.syncReconnectButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      if (audioReady) {
+        audio.playToggle();
+      }
+      mirrorLastSeenAt = 0;
+      bus.forceReconnect();
+      syncDiagnostics = bus.getDiagnostics();
+      updateMirrorChip();
+      updateSyncDiagnostics();
+    });
+  }
+
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       return;
@@ -968,6 +1067,7 @@ function setupRealtimeSync() {
     }
     mirrorLastSeenAt = nowMs();
     updateMirrorChip();
+    updateSyncDiagnostics();
   });
 
   bus.onSignal((signal) => {
@@ -998,6 +1098,11 @@ function setupRealtimeSync() {
     submitDeepStepChoice(choiceIndex);
   });
 
+  bus.onDiagnostics((next) => {
+    syncDiagnostics = next;
+    updateSyncDiagnostics();
+  });
+
   window.setInterval(() => {
     if (state.timerRunning && lessonElapsedSeconds() >= LESSON_DURATION_SECONDS) {
       setState({
@@ -1008,6 +1113,7 @@ function setupRealtimeSync() {
       return;
     }
     updateMirrorChip();
+    updateSyncDiagnostics();
     updateTimer();
     updateTimerButtons();
   }, 500);
@@ -1029,6 +1135,7 @@ function bootstrap() {
 
   render();
   bus.publishState(state);
+  updateSyncDiagnostics();
 }
 
 bootstrap();

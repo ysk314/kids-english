@@ -20,6 +20,8 @@ const pointFxLabel = document.querySelector("[data-testid='bigscreen-point-fx-la
 const endFx = document.querySelector("[data-testid='bigscreen-end-fx']");
 const endFxLabel = document.querySelector("[data-testid='bigscreen-end-fx-label']");
 const fullscreenButton = document.querySelector("[data-testid='fullscreen-btn']");
+const reconnectButton = document.querySelector("[data-testid='bigscreen-reconnect-btn']");
+const syncChip = document.querySelector("[data-testid='bigscreen-sync-chip']");
 
 let state = {
   slideIndex: 0,
@@ -39,6 +41,7 @@ let lastSlideId = "";
 let lastBeatSignalId = "";
 let latestBeatStep16 = 0;
 let lastEndRevealAt = null;
+let syncDiagnostics = bus.getDiagnostics();
 const POINT_FX_DURATION_MS = 1900;
 
 const END_ROLL_START_DELAY_MS = 3000;
@@ -65,13 +68,89 @@ function render() {
   }
 
   slideCount.textContent = `${index + 1} / ${WEEK5_SLIDES.length}`;
-  mirrorStatus.textContent = "Mirror Connected";
-  mirrorStatus.classList.add("hot");
   pointHeader.textContent = `みんな ${state.studentPoints ?? 0} / むつみ先生 ${state.teacherPoints ?? 0}`;
 
   lastSlideId = slide.id;
 
   applySlideInteraction();
+  updateSyncDiagnostics();
+}
+
+function formatElapsedFrom(ts) {
+  if (!Number.isFinite(ts) || ts <= 0) {
+    return "-";
+  }
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) {
+    return `${diffSec}s`;
+  }
+  const min = Math.floor(diffSec / 60);
+  const sec = diffSec % 60;
+  return `${min}m${sec}s`;
+}
+
+function labelPeerState(peerState) {
+  switch (peerState) {
+    case "open":
+      return "OK";
+    case "loading":
+      return "LOAD";
+    case "restarting":
+      return "RESTART";
+    case "reconnecting":
+    case "disconnected":
+      return "RETRY";
+    case "unavailable":
+      return "OFF";
+    case "error":
+      return "ERR";
+    case "closed":
+      return "STOP";
+    default:
+      return peerState || "-";
+  }
+}
+
+function labelRemoteState(remoteState) {
+  switch (remoteState) {
+    case "connected":
+      return "接続中";
+    case "connecting":
+      return "接続中...";
+    case "waiting":
+      return "待機";
+    case "reconnecting":
+      return "再接続";
+    case "disabled":
+      return "OFF";
+    case "closed":
+      return "停止";
+    default:
+      return remoteState || "-";
+  }
+}
+
+function updateSyncDiagnostics() {
+  const diagnostics = syncDiagnostics || bus.getDiagnostics();
+  const remoteConnected = diagnostics.remoteState === "connected";
+  if (mirrorStatus) {
+    mirrorStatus.textContent = remoteConnected ? "Mirror Connected" : "Mirror Waiting";
+    mirrorStatus.classList.toggle("hot", remoteConnected);
+  }
+  if (syncChip) {
+    const remoteLabel = labelRemoteState(diagnostics.remoteState);
+    const peerLabel = labelPeerState(diagnostics.peerState);
+    const up = formatElapsedFrom(diagnostics.lastOutboundAt);
+    const down = formatElapsedFrom(diagnostics.lastInboundAt);
+    const suffix = diagnostics.lastError ? ` err:${diagnostics.lastError}` : "";
+    syncChip.textContent = `接続:${remoteLabel} Peer:${peerLabel} ↑${up} ↓${down}${suffix}`;
+    syncChip.classList.toggle("hot", remoteConnected);
+  }
+  if (reconnectButton) {
+    const busy = diagnostics.peerState === "loading" || diagnostics.peerState === "restarting";
+    reconnectButton.disabled = busy;
+    reconnectButton.textContent = busy ? "再接続中..." : "再接続";
+  }
 }
 
 async function toggleFullscreen() {
@@ -660,6 +739,11 @@ bus.onSignal((signal) => {
   applyBeatLinkedVisuals(doc, slide, latestBeatStep16);
 });
 
+bus.onDiagnostics((next) => {
+  syncDiagnostics = next;
+  updateSyncDiagnostics();
+});
+
 const latest = bus.getLatestState();
 if (latest?.payload) {
   applyState(latest.payload);
@@ -679,6 +763,13 @@ if (frame) {
 }
 
 if (!isEmbed) {
+  if (reconnectButton) {
+    reconnectButton.addEventListener("click", () => {
+      bus.forceReconnect();
+      syncDiagnostics = bus.getDiagnostics();
+      updateSyncDiagnostics();
+    });
+  }
   if (fullscreenButton) {
     fullscreenButton.addEventListener("click", () => {
       toggleFullscreen().catch(() => {});
@@ -690,6 +781,7 @@ if (!isEmbed) {
 
   window.setInterval(() => {
     bus.publishPresence("bigscreen");
+    updateSyncDiagnostics();
   }, 1_500);
   bus.publishPresence("bigscreen");
 }
