@@ -180,6 +180,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-weight: 800;
         line-height: 1.3;
         text-align: center;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-sentence-line {
         display: flex;
@@ -226,6 +228,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         margin: 10px 0 0;
         font-size: clamp(20px, 2.6vw, 30px);
         font-weight: 800;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-work-board {
         display: grid;
@@ -268,6 +272,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
         justify-content: flex-start;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-work-slots {
         display: grid;
@@ -298,6 +304,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-weight: 800;
         text-align: center;
         padding: 12px;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-slot.is-live .week9-slot-value {
         animation: card-bob 620ms ease-in-out infinite;
@@ -309,6 +317,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-size: clamp(20px, 2.6vw, 30px);
         font-weight: 800;
         color: #5f3657;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-result-card {
         display: grid;
@@ -348,6 +358,8 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
         justify-content: flex-start;
+        word-break: keep-all;
+        overflow-wrap: normal;
       }
       .week9-result-image .week9-img-shell {
         width: 100%;
