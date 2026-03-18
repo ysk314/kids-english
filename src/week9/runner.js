@@ -1,0 +1,1288 @@
+import {
+  FLOW_STEPS,
+  LESSON_GOALS,
+  WEEK9_SLIDES,
+  WORK_PHASES,
+  findSlideIndexById,
+  getWorkDisplayState,
+  randomRouletteSeed,
+  stepIndexForSlide
+} from "./lessonData.js";
+import { Week5AudioEngine } from "../week5/audioEngine.js";
+import { SessionBus, defaultSessionId } from "../week5/sessionBus.js";
+import { LESSON_DURATION_SECONDS, clamp, formatLessonTimer, nowMs } from "../week5/utils.js";
+
+const params = new URLSearchParams(window.location.search);
+const sessionId = params.get("session") || defaultSessionId("week9");
+const initialSlideId = params.get("slide");
+
+const bus = new SessionBus(sessionId, {
+  role: "runner"
+});
+const audio = new Week5AudioEngine();
+
+const fallbackState = {
+  slideIndex: 0,
+  studentPoints: 0,
+  teacherPoints: 0,
+  slideInteractions: {},
+  bgmEnabled: true,
+  timerRunning: false,
+  timerOffsetSec: 0,
+  timerStartedAt: null,
+  updatedAt: nowMs()
+};
+
+const latest = bus.getLatestState();
+let state = latest?.payload && typeof latest.payload === "object" ? { ...fallbackState, ...latest.payload } : fallbackState;
+
+if (initialSlideId) {
+  const idx = findSlideIndexById(initialSlideId);
+  if (idx >= 0) {
+    state.slideIndex = idx;
+  }
+}
+state.slideIndex = clamp(state.slideIndex, 0, WEEK9_SLIDES.length - 1);
+
+function normalizeTimerState(rawState) {
+  const normalized = { ...rawState };
+  const now = nowMs();
+
+  if (!normalized.slideInteractions || typeof normalized.slideInteractions !== "object") {
+    normalized.slideInteractions = {};
+  }
+
+  if (
+    typeof normalized.timerRunning !== "boolean" ||
+    typeof normalized.timerOffsetSec !== "number" ||
+    !(normalized.timerStartedAt === null || typeof normalized.timerStartedAt === "number")
+  ) {
+    if (typeof normalized.startedAt === "number") {
+      const migratedElapsed = clamp(
+        Math.floor((now - normalized.startedAt) / 1000),
+        0,
+        LESSON_DURATION_SECONDS
+      );
+      normalized.timerOffsetSec = migratedElapsed;
+      normalized.timerRunning = migratedElapsed < LESSON_DURATION_SECONDS;
+      normalized.timerStartedAt = normalized.timerRunning ? now : null;
+    } else {
+      normalized.timerRunning = false;
+      normalized.timerOffsetSec = 0;
+      normalized.timerStartedAt = null;
+    }
+  }
+
+  normalized.timerOffsetSec = clamp(
+    Number.isFinite(normalized.timerOffsetSec) ? Math.floor(normalized.timerOffsetSec) : 0,
+    0,
+    LESSON_DURATION_SECONDS
+  );
+
+  if (normalized.timerRunning) {
+    if (!Number.isFinite(normalized.timerStartedAt)) {
+      normalized.timerStartedAt = now;
+    }
+    if (normalized.timerOffsetSec >= LESSON_DURATION_SECONDS) {
+      normalized.timerRunning = false;
+      normalized.timerStartedAt = null;
+    }
+  } else {
+    normalized.timerStartedAt = null;
+  }
+
+  if ("startedAt" in normalized) {
+    delete normalized.startedAt;
+  }
+
+  return normalized;
+}
+
+state = normalizeTimerState(state);
+
+const elements = {
+  scaleRoot: document.querySelector("[data-role='runner-scale']"),
+  mirrorChip: document.querySelector("[data-role='mirror-chip']"),
+  slideCounter: document.querySelector("[data-testid='slide-counter']"),
+  timer: document.querySelector("[data-testid='lesson-timer']"),
+  timerToggleButton: document.querySelector("[data-testid='timer-toggle-btn']"),
+  timerResetButton: document.querySelector("[data-testid='timer-reset-btn']"),
+  flowSteps: document.querySelector("[data-role='flow-steps']"),
+  goals: document.querySelector("[data-role='goal-grid']"),
+  previewFrame: document.querySelector("[data-testid='stage-preview-frame']"),
+  previewLabel: document.querySelector("[data-testid='stage-preview-label']"),
+  hintPhase: document.querySelector("[data-testid='hint-phase']"),
+  hintId: document.querySelector("[data-testid='hint-id']"),
+  hintTitle: document.querySelector("[data-testid='hint-title']"),
+  hintAim: document.querySelector("[data-testid='hint-aim']"),
+  hintScript: document.querySelector("[data-testid='hint-script']"),
+  hintList: document.querySelector("[data-testid='hint-list']"),
+  studentPoints: document.querySelector("[data-testid='student-points']"),
+  teacherPoints: document.querySelector("[data-testid='teacher-points']"),
+  nextButton: document.querySelector("[data-testid='next-btn']"),
+  prevButton: document.querySelector("[data-testid='prev-btn']"),
+  studentPointButton: document.querySelector("[data-testid='student-point-btn']"),
+  teacherPointButton: document.querySelector("[data-testid='teacher-point-btn']"),
+  correctButton: document.querySelector("[data-testid='correct-btn']"),
+  incorrectButton: document.querySelector("[data-testid='incorrect-btn']"),
+  resetPointsButton: document.querySelector("[data-testid='reset-points-btn']"),
+  lessonResetButton: document.querySelector("[data-testid='lesson-reset-btn']"),
+  openBigButton: document.querySelector("[data-testid='open-bigscreen-btn']"),
+  soundButton: document.querySelector("[data-testid='sound-btn']"),
+  syncStatusLine: document.querySelector("[data-testid='sync-status-line']"),
+  syncStatusSub: document.querySelector("[data-testid='sync-status-sub']"),
+  syncReconnectButton: document.querySelector("[data-testid='sync-reconnect-btn']"),
+  rouletteStartButton: document.querySelector("[data-testid='roulette-start-btn']"),
+  rouletteStopButton: document.querySelector("[data-testid='roulette-stop-btn']"),
+  subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
+  subNextButton: document.querySelector("[data-testid='sub-next-btn']")
+};
+
+let activeHintButton = null;
+let mirrorLastSeenAt = 0;
+let audioReady = false;
+let lastRenderedSlideId = "";
+let beatSignalTimer = null;
+let beatSignalStep = 0;
+let beatSignalKey = "";
+let endRevealTimer = null;
+let workRevealTimer = null;
+let syncDiagnostics = bus.getDiagnostics();
+const END_CYMBAL_DELAY_MS = 1300;
+let beatListenerBound = false;
+const BIGSCREEN_BASE_WIDTH = 1512;
+const BIGSCREEN_BASE_HEIGHT = 982;
+const QUARTER_BEAT_STEPS = [0, 4, 8, 12];
+const WORK_BEAT_BUFFER_RATIO = 0.9;
+const WORK_BEAT_BUFFER_MIN_MS = 110;
+const WORK_BEAT_BUFFER_MAX_MS = 180;
+let latestBeatStep16 = 0;
+let latestBeatAtMs = 0;
+
+function buildBigScreenUrl({ embed = false } = {}) {
+  const url = new URL("./big-screen.html", window.location.href);
+  url.searchParams.set("session", sessionId);
+  if (embed) {
+    url.searchParams.set("embed", "1");
+  } else {
+    url.searchParams.delete("embed");
+  }
+  return `${url.pathname}${url.search}`;
+}
+
+function buildFlowSteps() {
+  elements.flowSteps.innerHTML = FLOW_STEPS.map(
+    (step) => `<span class='flow-step' data-step-id='${step.id}'>${step.label}</span>`
+  ).join("");
+}
+
+function buildGoals() {
+  elements.goals.innerHTML = LESSON_GOALS.map(
+    (goal) => `<div class='goal-item'><strong>${goal.id}</strong><p>${goal.text}</p></div>`
+  ).join("");
+}
+
+function buildHintList() {
+  elements.hintList.innerHTML = "";
+  WEEK9_SLIDES.forEach((slide, index) => {
+    const button = document.createElement("button");
+    button.className = "hint-item";
+    button.type = "button";
+    button.textContent = `${index + 1}. ${slide.id}`;
+    button.dataset.slideIndex = String(index);
+    button.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playNavigate();
+      setState({ slideIndex: index });
+    });
+    elements.hintList.appendChild(button);
+  });
+}
+
+function currentSlide() {
+  return WEEK9_SLIDES[state.slideIndex] || WEEK9_SLIDES[0];
+}
+
+function getSlideInteraction(slideId) {
+  const interaction = state.slideInteractions?.[slideId];
+  if (!interaction || typeof interaction !== "object") {
+    return {};
+  }
+  return interaction;
+}
+
+function getSubStepMax(slide) {
+  if (slide.kind === "work") {
+    return 4;
+  }
+  if (slide.kind === "end") {
+    return 2;
+  }
+  return 0;
+}
+
+function inferDefaultSubStep(slide) {
+  return slide.kind === "work" ? WORK_PHASES.IDLE : 0;
+}
+
+function lessonElapsedSeconds() {
+  const runningElapsed =
+    state.timerRunning && state.timerStartedAt
+      ? Math.floor((nowMs() - state.timerStartedAt) / 1000)
+      : 0;
+  return clamp(state.timerOffsetSec + runningElapsed, 0, LESSON_DURATION_SECONDS);
+}
+
+function updateFlowHighlight(slide) {
+  const activeIndex = stepIndexForSlide(slide);
+  const chips = elements.flowSteps.querySelectorAll(".flow-step");
+  chips.forEach((chip, index) => {
+    chip.classList.toggle("active", index === activeIndex);
+  });
+}
+
+function updateHintPanel(slide) {
+  elements.hintPhase.textContent = slide.modeLabel;
+  elements.hintId.textContent = slide.id;
+  elements.hintTitle.textContent = slide.hint.title;
+  elements.hintAim.textContent = slide.hint.aim;
+  elements.hintScript.textContent = slide.hint.script;
+
+  if (activeHintButton) {
+    activeHintButton.classList.remove("active");
+  }
+
+  activeHintButton = elements.hintList.querySelector(`[data-slide-index='${state.slideIndex}']`);
+  if (activeHintButton) {
+    activeHintButton.classList.add("active");
+    activeHintButton.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function updatePreview(slide) {
+  elements.previewLabel.textContent = `${slide.id} / ${slide.hint.title}`;
+}
+
+function bindArrowKeyToDoc(doc) {
+  if (!doc || doc.__week5RunnerArrowBound) {
+    return;
+  }
+  doc.addEventListener("keydown", handleArrowKey, true);
+  doc.__week5RunnerArrowBound = true;
+}
+
+function bindArrowKeyToPreviewFrames() {
+  const frameDoc = elements.previewFrame?.contentDocument;
+  if (!frameDoc) {
+    return;
+  }
+  bindArrowKeyToDoc(frameDoc);
+  const nestedFrame = frameDoc.querySelector("[data-testid='bigscreen-frame']");
+  if (!nestedFrame) {
+    return;
+  }
+  nestedFrame.addEventListener("load", () => {
+    bindArrowKeyToDoc(nestedFrame.contentDocument);
+  });
+  bindArrowKeyToDoc(nestedFrame.contentDocument);
+}
+
+function initializePreviewFrame() {
+  const url = buildBigScreenUrl({ embed: true });
+  if (!elements.previewFrame) {
+    return;
+  }
+  if (elements.previewFrame.getAttribute("src") !== url) {
+    elements.previewFrame.setAttribute("src", url);
+  }
+  elements.previewFrame.addEventListener("load", bindArrowKeyToPreviewFrames);
+  bindArrowKeyToPreviewFrames();
+}
+
+function makeFxEvent(kind) {
+  return {
+    id: `${nowMs()}-${Math.random().toString(16).slice(2, 8)}`,
+    kind
+  };
+}
+
+function fitPreviewScale() {
+  if (!elements.previewFrame) {
+    return;
+  }
+
+  const frameEl = elements.previewFrame.closest(".stage-preview-frame");
+  if (!frameEl) {
+    return;
+  }
+
+  const scale = Math.min(
+    frameEl.clientWidth / BIGSCREEN_BASE_WIDTH,
+    frameEl.clientHeight / BIGSCREEN_BASE_HEIGHT
+  );
+
+  elements.previewFrame.style.setProperty("--preview-scale", String(scale));
+}
+
+function updateTimer() {
+  elements.timer.textContent = formatLessonTimer(lessonElapsedSeconds());
+}
+
+function updateTimerButtons() {
+  if (!elements.timerToggleButton || !elements.timerResetButton) {
+    return;
+  }
+
+  elements.timerToggleButton.classList.toggle("active", state.timerRunning);
+  elements.timerToggleButton.textContent = state.timerRunning ? "一時停止⏸️" : "スタート▶︎";
+  elements.timerResetButton.classList.remove("active");
+}
+
+function updateScore() {
+  if (elements.studentPoints) {
+    elements.studentPoints.textContent = String(state.studentPoints);
+  }
+  if (elements.teacherPoints) {
+    elements.teacherPoints.textContent = String(state.teacherPoints);
+  }
+}
+
+function updateSlideActionButtons(slide) {
+  const maxStep = getSubStepMax(slide);
+  const hasSubStep = maxStep > 0;
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (elements.rouletteStartButton && elements.rouletteStopButton) {
+    const isWorkSlide = slide.kind === "work";
+    elements.rouletteStartButton.disabled = !isWorkSlide;
+    elements.rouletteStopButton.disabled = !isWorkSlide;
+    if (!isWorkSlide) {
+      elements.rouletteStartButton.textContent = "ルーレット開始";
+      elements.rouletteStopButton.textContent = "ルーレット停止";
+    } else if (
+      currentStep === WORK_PHASES.IDLE &&
+      !Number.isFinite(getSlideInteraction(slide.id).subjectIndex)
+    ) {
+      elements.rouletteStartButton.textContent = "主語スタート";
+      elements.rouletteStopButton.textContent = "停止待ち";
+      elements.rouletteStopButton.disabled = true;
+    } else if (currentStep === WORK_PHASES.IDLE) {
+      elements.rouletteStartButton.textContent = "述語スタート";
+      elements.rouletteStopButton.textContent = "停止待ち";
+      elements.rouletteStopButton.disabled = true;
+    } else if (currentStep === WORK_PHASES.SUBJECT_SPINNING) {
+      elements.rouletteStartButton.textContent = "主語回転中";
+      elements.rouletteStartButton.disabled = true;
+      elements.rouletteStopButton.textContent = "主語ストップ";
+    } else if (currentStep === WORK_PHASES.PREDICATE_SPINNING) {
+      elements.rouletteStartButton.textContent = "述語回転中";
+      elements.rouletteStartButton.disabled = true;
+      elements.rouletteStopButton.textContent = "述語ストップ";
+    } else if (currentStep === WORK_PHASES.REVEALING) {
+      elements.rouletteStartButton.textContent = "発表中";
+      elements.rouletteStartButton.disabled = true;
+      elements.rouletteStopButton.textContent = "発表中";
+      elements.rouletteStopButton.disabled = true;
+    } else {
+      elements.rouletteStartButton.textContent = "もう1回";
+      elements.rouletteStopButton.textContent = "停止待ち";
+      elements.rouletteStopButton.disabled = true;
+    }
+  }
+  if (elements.subPrevButton && elements.subNextButton) {
+    if (slide.kind === "work") {
+      elements.subPrevButton.disabled = true;
+      elements.subNextButton.disabled = true;
+      elements.subPrevButton.textContent = "◀ スライド内";
+      elements.subNextButton.textContent = "スライド内 ▶";
+      return;
+    }
+    elements.subPrevButton.disabled = !hasSubStep && state.slideIndex <= 0;
+    elements.subNextButton.disabled = !hasSubStep && state.slideIndex >= WEEK9_SLIDES.length - 1;
+    if (slide.kind === "end") {
+      elements.subPrevButton.textContent = `◀ スライド内 ${Math.min(currentStep + 1, maxStep)}/${maxStep}`;
+      elements.subNextButton.textContent = currentStep > 0 ? "演出ずみ" : "けっかはっぴょう ▶";
+      elements.subNextButton.disabled = currentStep > 0;
+    } else {
+      elements.subPrevButton.textContent = hasSubStep ? `◀ スライド内 ${currentStep + 1}/${maxStep}` : "◀ スライド内";
+      elements.subNextButton.textContent = hasSubStep ? `スライド内 ${currentStep + 1}/${maxStep} ▶` : "スライド内 ▶";
+    }
+  }
+}
+
+function updateMirrorChip() {
+  const connected = nowMs() - mirrorLastSeenAt < 4_500;
+  elements.mirrorChip.textContent = connected ? "Mirror Connected" : "Mirror Waiting";
+  elements.mirrorChip.classList.toggle("hot", connected);
+}
+
+function formatElapsedFrom(ts) {
+  if (!Number.isFinite(ts) || ts <= 0) {
+    return "-";
+  }
+  const diffSec = Math.max(0, Math.floor((nowMs() - ts) / 1000));
+  if (diffSec < 60) {
+    return `${diffSec}s前`;
+  }
+  const min = Math.floor(diffSec / 60);
+  const sec = diffSec % 60;
+  return `${min}m${sec}s前`;
+}
+
+function labelPeerState(peerState) {
+  switch (peerState) {
+    case "open":
+      return "OK";
+    case "loading":
+      return "読み込み中";
+    case "restarting":
+      return "再起動中";
+    case "reconnecting":
+    case "disconnected":
+      return "再接続中";
+    case "unavailable":
+      return "利用不可";
+    case "error":
+      return "エラー";
+    case "closed":
+      return "停止";
+    default:
+      return peerState || "-";
+  }
+}
+
+function labelRemoteState(remoteState) {
+  switch (remoteState) {
+    case "connected":
+      return "接続中";
+    case "connecting":
+      return "接続中...";
+    case "waiting":
+      return "待機中";
+    case "reconnecting":
+      return "再接続中";
+    case "disabled":
+      return "OFF";
+    case "closed":
+      return "停止";
+    default:
+      return remoteState || "-";
+  }
+}
+
+function updateSyncDiagnostics() {
+  if (!elements.syncStatusLine || !elements.syncStatusSub) {
+    return;
+  }
+  const diagnostics = syncDiagnostics || bus.getDiagnostics();
+  const mirrorConnected = nowMs() - mirrorLastSeenAt < 4_500;
+  const displayRemoteState = mirrorConnected ? "connected" : diagnostics.remoteState;
+  const remoteText = labelRemoteState(displayRemoteState);
+  const peerText = labelPeerState(diagnostics.peerState);
+  elements.syncStatusLine.textContent = `同期: ${remoteText} / Peer: ${peerText}`;
+  elements.syncStatusLine.classList.toggle("ok", displayRemoteState === "connected");
+  elements.syncStatusLine.classList.toggle("warn", displayRemoteState !== "connected");
+
+  const connectionCount =
+    typeof diagnostics.runnerConnections === "number" ? diagnostics.runnerConnections : 0;
+  const lastIn = formatElapsedFrom(diagnostics.lastInboundAt);
+  const lastOut = formatElapsedFrom(diagnostics.lastOutboundAt);
+  const errorText = diagnostics.lastError ? diagnostics.lastError : "なし";
+  elements.syncStatusSub.textContent = `接続台数:${connectionCount} 受信:${lastIn} 送信:${lastOut} err:${errorText}`;
+
+  if (elements.syncReconnectButton) {
+    const busy = diagnostics.peerState === "loading" || diagnostics.peerState === "restarting";
+    elements.syncReconnectButton.disabled = busy;
+    elements.syncReconnectButton.textContent = busy ? "同期を再接続中..." : "同期を再接続";
+  }
+}
+
+function updateSoundButtons() {
+  if (!audioReady) {
+    elements.soundButton.textContent = "サウンド開始";
+    elements.soundButton.classList.remove("hot");
+    return;
+  }
+
+  const slide = currentSlide();
+  const bgmSuppressedByRhythm = state.bgmEnabled && isSlideMetronomeEnabled(slide);
+  if (state.bgmEnabled) {
+    elements.soundButton.textContent = bgmSuppressedByRhythm
+      ? "サウンド/BGM ON（リズム中BGM一時OFF）"
+      : "サウンド/BGM ON";
+  } else {
+    elements.soundButton.textContent = "サウンド/BGM OFF";
+  }
+  elements.soundButton.classList.toggle("hot", state.bgmEnabled);
+}
+
+function fitRunnerScale() {
+  if (!elements.scaleRoot) {
+    return;
+  }
+
+  elements.scaleRoot.style.width = "";
+  elements.scaleRoot.style.transform = "";
+  elements.scaleRoot.style.marginTop = "";
+  elements.scaleRoot.style.marginLeft = "";
+  elements.scaleRoot.style.marginRight = "";
+  fitPreviewScale();
+}
+
+function applyAudioBySlide(slide) {
+  if (!audioReady) {
+    return;
+  }
+
+  if (slide?.kind !== "work") {
+    audio.stopRouletteSpin();
+  }
+
+  if (isSlideMetronomeEnabled(slide)) {
+    audio.setMetronome(slide.bpm);
+  } else {
+    audio.setMetronome(null);
+  }
+  audio.setBgmEnabled(state.bgmEnabled);
+}
+
+function isSlideMetronomeEnabled(slide) {
+  return Boolean(slide && typeof slide.bpm === "number" && slide.bpm > 0);
+}
+
+function getBeatBpmForSlide(slide) {
+  if (isSlideMetronomeEnabled(slide)) {
+    return slide.bpm;
+  }
+  return null;
+}
+
+function markLatestBeat(step16, atMs = Date.now()) {
+  const numericStep = Number(step16) || 0;
+  latestBeatStep16 = ((numericStep % 16) + 16) % 16;
+  latestBeatAtMs = Number.isFinite(atMs) ? atMs : Date.now();
+}
+
+function circularStepDistance(stepA, stepB, modulo = 16) {
+  const diff = Math.abs(stepA - stepB) % modulo;
+  return Math.min(diff, modulo - diff);
+}
+
+function isWorkTapOnMiddleBeat(slide) {
+  const bpm = getBeatBpmForSlide(slide);
+  if (!bpm || latestBeatAtMs <= 0) {
+    return false;
+  }
+  const stepWindowMs = Math.max(30, Math.floor(60_000 / bpm / 4));
+  const elapsedMs = nowMs() - latestBeatAtMs;
+  if (elapsedMs < -stepWindowMs || elapsedMs > stepWindowMs * 10) {
+    return false;
+  }
+  const currentStep = ((latestBeatStep16 + elapsedMs / stepWindowMs) % 16 + 16) % 16;
+  const nearestQuarterDistance = QUARTER_BEAT_STEPS.reduce((min, beatStep) => {
+    return Math.min(min, circularStepDistance(currentStep, beatStep));
+  }, Number.POSITIVE_INFINITY);
+  const timingBufferMs = clamp(
+    Math.round(stepWindowMs * WORK_BEAT_BUFFER_RATIO),
+    WORK_BEAT_BUFFER_MIN_MS,
+    WORK_BEAT_BUFFER_MAX_MS
+  );
+  return nearestQuarterDistance * stepWindowMs <= timingBufferMs;
+}
+
+function stopBeatSignal() {
+  if (beatSignalTimer) {
+    window.clearInterval(beatSignalTimer);
+    beatSignalTimer = null;
+  }
+}
+
+function publishBeatSignal(step16, bpm, slideId, { at = Date.now() } = {}) {
+  const normalizedStep = ((Number(step16) || 0) % 16 + 16) % 16;
+  const beatAt = Number.isFinite(at) ? at : Date.now();
+  markLatestBeat(normalizedStep, beatAt);
+  bus.publishSignal("beat", {
+    id: `${Date.now()}-${normalizedStep}`,
+    step16: normalizedStep,
+    bpm,
+    slideId,
+    at: beatAt,
+    sentAt: Date.now()
+  });
+}
+
+function syncBeatSignalBySlide(slide) {
+  const bpm = getBeatBpmForSlide(slide);
+  if (!bpm) {
+    stopBeatSignal();
+    beatSignalKey = "";
+    return;
+  }
+
+  const usingMetronome = isSlideMetronomeEnabled(slide);
+  const key = `${slide.id}:${bpm}:${usingMetronome ? "metronome" : "timer"}`;
+  if (beatSignalKey === key && (beatSignalTimer || (audioReady && usingMetronome))) {
+    return;
+  }
+
+  beatSignalKey = key;
+  beatSignalStep = 1;
+  publishBeatSignal(0, bpm, slide.id);
+
+  if (audioReady && usingMetronome) {
+    stopBeatSignal();
+    return;
+  }
+
+  stopBeatSignal();
+  const intervalMs = Math.max(30, Math.floor(60_000 / bpm / 4));
+  beatSignalTimer = window.setInterval(() => {
+    publishBeatSignal(beatSignalStep, bpm, slide.id);
+    beatSignalStep = (beatSignalStep + 1) % 16;
+  }, intervalMs);
+}
+
+function setSlideInteraction(slideId, patch) {
+  const prev = getSlideInteraction(slideId);
+  return {
+    ...state.slideInteractions,
+    [slideId]: {
+      ...prev,
+      ...patch
+    }
+  };
+}
+
+function createFreshLessonState() {
+  return normalizeTimerState({
+    ...fallbackState,
+    bgmEnabled: state?.bgmEnabled ?? fallbackState.bgmEnabled,
+    timerRunning: false,
+    timerOffsetSec: 0,
+    timerStartedAt: null,
+    slideIndex: 0,
+    studentPoints: 0,
+    teacherPoints: 0,
+    slideInteractions: {},
+    fxEvent: null,
+    updatedAt: nowMs()
+  });
+}
+
+function shouldResetOnLoad() {
+  const newFlag = params.get("new");
+  const resetFlag = params.get("reset");
+  return newFlag === "1" || resetFlag === "1";
+}
+
+function render() {
+  const slide = currentSlide();
+  if (slide.kind !== "end" && endRevealTimer) {
+    window.clearTimeout(endRevealTimer);
+    endRevealTimer = null;
+  }
+  lastRenderedSlideId = slide.id;
+  elements.slideCounter.textContent = `${state.slideIndex + 1} / ${WEEK9_SLIDES.length}`;
+  updateFlowHighlight(slide);
+  updateHintPanel(slide);
+  updatePreview(slide);
+  updateTimer();
+  updateTimerButtons();
+  updateScore();
+  updateSlideActionButtons(slide);
+  updateMirrorChip();
+  updateSoundButtons();
+  applyAudioBySlide(slide);
+  syncBeatSignalBySlide(slide);
+  fitPreviewScale();
+}
+
+function setState(patch, { broadcast = true } = {}) {
+  state = normalizeTimerState({
+    ...state,
+    ...patch,
+    slideIndex: clamp(patch.slideIndex ?? state.slideIndex, 0, WEEK9_SLIDES.length - 1),
+    updatedAt: nowMs()
+  });
+
+  render();
+
+  if (broadcast) {
+    bus.publishState(state);
+  }
+}
+
+async function ensureAudioReady() {
+  if (audioReady) {
+    return;
+  }
+  audioReady = await audio.unlock();
+  if (audioReady) {
+    stopBeatSignal();
+    applyAudioBySlide(currentSlide());
+    syncBeatSignalBySlide(currentSlide());
+  }
+  updateSoundButtons();
+}
+
+async function goNext() {
+  await ensureAudioReady();
+  clearPendingWorkReveal();
+  audio.stopRouletteSpin();
+  audio.playNavigate();
+  setState({ slideIndex: state.slideIndex + 1 });
+}
+
+async function goPrev() {
+  await ensureAudioReady();
+  clearPendingWorkReveal();
+  audio.stopRouletteSpin();
+  audio.playNavigate();
+  setState({ slideIndex: state.slideIndex - 1 });
+}
+
+function resetWorkInteraction(slide) {
+  return setSlideInteraction(slide.id, {
+    subStep: WORK_PHASES.IDLE,
+    subjectIndex: null,
+    subjectSeed: null,
+    subjectStartedAt: null,
+    predicateIndex: null,
+    predicateSeed: null,
+    predicateStartedAt: null,
+    revealedAt: null
+  });
+}
+
+function startSubjectRoulette(slide) {
+  return setSlideInteraction(slide.id, {
+    subStep: WORK_PHASES.SUBJECT_SPINNING,
+    subjectIndex: null,
+    subjectSeed: randomRouletteSeed(1000),
+    subjectStartedAt: nowMs(),
+    predicateIndex: null,
+    predicateSeed: null,
+    predicateStartedAt: null,
+    revealedAt: null
+  });
+}
+
+function revealWorkSentence(slide) {
+  const display = getWorkDisplayState(getSlideInteraction(slide.id), slide.phase, nowMs());
+  return setSlideInteraction(slide.id, {
+    subStep: WORK_PHASES.REVEALED,
+    subjectIndex: display.subjectIndex,
+    predicateIndex: display.predicateIndex,
+    revealedAt: nowMs()
+  });
+}
+
+function clearPendingWorkReveal() {
+  if (workRevealTimer) {
+    window.clearTimeout(workRevealTimer);
+    workRevealTimer = null;
+  }
+}
+
+async function startWorkRoulette() {
+  const slide = currentSlide();
+  if (slide.kind !== "work") {
+    return;
+  }
+  await ensureAudioReady();
+  const interaction = getSlideInteraction(slide.id);
+  const phase = Number(interaction.subStep ?? WORK_PHASES.IDLE);
+  if (phase === WORK_PHASES.SUBJECT_SPINNING || phase === WORK_PHASES.PREDICATE_SPINNING) {
+    return;
+  }
+  clearPendingWorkReveal();
+  audio.playRouletteStart();
+  audio.startRouletteSpin();
+  if (phase === WORK_PHASES.IDLE) {
+    if (Number.isFinite(interaction.subjectIndex) && !Number.isFinite(interaction.predicateIndex)) {
+      setState({
+        slideInteractions: setSlideInteraction(slide.id, {
+          subStep: WORK_PHASES.PREDICATE_SPINNING,
+          predicateIndex: null,
+          predicateSeed: randomRouletteSeed(1000),
+          predicateStartedAt: nowMs(),
+          revealedAt: null
+        })
+      });
+      return;
+    }
+    setState({ slideInteractions: startSubjectRoulette(slide) });
+    return;
+  }
+  if (phase === WORK_PHASES.REVEALED) {
+    setState({ slideInteractions: startSubjectRoulette(slide) });
+    return;
+  }
+}
+
+async function stopWorkRoulette() {
+  const slide = currentSlide();
+  if (slide.kind !== "work") {
+    return;
+  }
+  await ensureAudioReady();
+  const phase = Number(getSlideInteraction(slide.id).subStep ?? WORK_PHASES.IDLE);
+  if (phase !== WORK_PHASES.SUBJECT_SPINNING && phase !== WORK_PHASES.PREDICATE_SPINNING) {
+    return;
+  }
+  audio.stopRouletteSpin();
+  audio.playRouletteStop();
+  if (phase === WORK_PHASES.SUBJECT_SPINNING) {
+    const display = getWorkDisplayState(getSlideInteraction(slide.id), slide.phase, nowMs());
+    setState({
+      slideInteractions: setSlideInteraction(slide.id, {
+        subStep: WORK_PHASES.IDLE,
+        subjectIndex: display.subjectIndex,
+        subjectStartedAt: null,
+        subjectSeed: null,
+        predicateIndex: null,
+        predicateSeed: null,
+        predicateStartedAt: null,
+        revealedAt: null
+      })
+    });
+    return;
+  }
+  const display = getWorkDisplayState(getSlideInteraction(slide.id), slide.phase, nowMs());
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      subStep: WORK_PHASES.REVEALING,
+      subjectIndex: display.subjectIndex,
+      subjectStartedAt: null,
+      subjectSeed: null,
+      predicateIndex: display.predicateIndex,
+      predicateStartedAt: null,
+      predicateSeed: null,
+      revealedAt: null
+    })
+  });
+  audio.playEndFanfare();
+  clearPendingWorkReveal();
+  workRevealTimer = window.setTimeout(() => {
+    const current = currentSlide();
+    if (!current || current.id !== slide.id) {
+      return;
+    }
+    setState({ slideInteractions: revealWorkSentence(slide) });
+    workRevealTimer = null;
+  }, END_CYMBAL_DELAY_MS);
+}
+
+async function goSubNext() {
+  const slide = currentSlide();
+  if (slide.kind === "work") {
+    const phase = Number(getSlideInteraction(slide.id).subStep ?? WORK_PHASES.IDLE);
+    if (phase === WORK_PHASES.SUBJECT_SPINNING || phase === WORK_PHASES.PREDICATE_SPINNING) {
+      await stopWorkRoulette();
+      return;
+    }
+    await startWorkRoulette();
+    return;
+  }
+  const maxStep = getSubStepMax(slide);
+  if (maxStep <= 0) {
+    await goNext();
+    return;
+  }
+  await ensureAudioReady();
+  if (slide.kind === "end") {
+    const currentStep = Number(getSlideInteraction(slide.id).subStep ?? 0);
+    if (currentStep > 0) {
+      return;
+    }
+    audio.playEndFanfare();
+    if (endRevealTimer) {
+      window.clearTimeout(endRevealTimer);
+      endRevealTimer = null;
+    }
+    setState({
+      slideInteractions: setSlideInteraction(slide.id, {
+        subStep: 1,
+        endRevealAt: null
+      })
+    });
+    endRevealTimer = window.setTimeout(() => {
+      const current = currentSlide();
+      if (!current || current.id !== slide.id) {
+        return;
+      }
+      setState({
+        slideInteractions: setSlideInteraction(slide.id, {
+          subStep: 1,
+          endRevealAt: nowMs()
+        })
+      });
+      endRevealTimer = null;
+    }, END_CYMBAL_DELAY_MS);
+    return;
+  }
+
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (currentStep >= maxStep - 1) {
+    await goNext();
+    return;
+  }
+  audio.playNavigate();
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      subStep: currentStep + 1
+    })
+  });
+}
+
+async function goSubPrev() {
+  const slide = currentSlide();
+  if (slide.kind === "work") {
+    const phase = Number(getSlideInteraction(slide.id).subStep ?? WORK_PHASES.IDLE);
+    if (phase <= WORK_PHASES.IDLE || phase === WORK_PHASES.REVEALING) {
+      await goPrev();
+      return;
+    }
+    await ensureAudioReady();
+    clearPendingWorkReveal();
+    audio.stopRouletteSpin();
+    audio.playNavigate();
+    setState({ slideInteractions: resetWorkInteraction(slide) });
+    return;
+  }
+  const maxStep = getSubStepMax(slide);
+  if (maxStep <= 0) {
+    await goPrev();
+    return;
+  }
+  await ensureAudioReady();
+  if (slide.kind === "end") {
+    const currentStep = Number(getSlideInteraction(slide.id).subStep ?? 0);
+    if (currentStep <= 0) {
+      await goPrev();
+      return;
+    }
+    if (endRevealTimer) {
+      window.clearTimeout(endRevealTimer);
+      endRevealTimer = null;
+    }
+    setState({
+      slideInteractions: setSlideInteraction(slide.id, {
+        subStep: 0,
+        endRevealAt: null
+      })
+    });
+    return;
+  }
+  const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
+  if (currentStep <= 0) {
+    await goPrev();
+    return;
+  }
+  audio.playNavigate();
+  setState({
+    slideInteractions: setSlideInteraction(slide.id, {
+      subStep: currentStep - 1
+    })
+  });
+}
+
+async function startOrResumeTimer() {
+  await ensureAudioReady();
+  audio.playToggle();
+  const elapsed = lessonElapsedSeconds();
+  setState({
+    timerOffsetSec: elapsed >= LESSON_DURATION_SECONDS ? 0 : elapsed,
+    timerRunning: true,
+    timerStartedAt: nowMs()
+  });
+}
+
+async function pauseTimer() {
+  await ensureAudioReady();
+  audio.playToggle();
+  setState({
+    timerOffsetSec: lessonElapsedSeconds(),
+    timerRunning: false,
+    timerStartedAt: null
+  });
+}
+
+async function toggleTimer() {
+  if (state.timerRunning) {
+    await pauseTimer();
+    return;
+  }
+  await startOrResumeTimer();
+}
+
+async function resetTimer() {
+  await ensureAudioReady();
+  audio.playNavigate();
+  setState({
+    timerOffsetSec: 0,
+    timerRunning: false,
+    timerStartedAt: null
+  });
+}
+
+function handleArrowKey(event) {
+  if (event.defaultPrevented) {
+    return;
+  }
+
+  const target = event.target;
+  const elementTarget = target && target.nodeType === Node.ELEMENT_NODE ? target : null;
+  const tagName = String(elementTarget?.tagName || "").toUpperCase();
+  if (
+    elementTarget &&
+    (Boolean(elementTarget.isContentEditable) || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT")
+  ) {
+    return;
+  }
+
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      goNext();
+      return;
+    }
+    goSubNext();
+    return;
+  }
+
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      goPrev();
+      return;
+    }
+    goSubPrev();
+  }
+}
+
+async function setupControls() {
+  elements.nextButton.addEventListener("click", goNext);
+
+  elements.prevButton.addEventListener("click", goPrev);
+
+  if (elements.timerToggleButton) {
+    elements.timerToggleButton.addEventListener("click", toggleTimer);
+  }
+  if (elements.timerResetButton) {
+    elements.timerResetButton.addEventListener("click", resetTimer);
+  }
+
+  elements.studentPointButton.addEventListener("click", async () => {
+    await ensureAudioReady();
+    audio.playPoint("student");
+    setState({
+      studentPoints: state.studentPoints + 1,
+      fxEvent: makeFxEvent("student")
+    });
+  });
+
+  elements.teacherPointButton.addEventListener("click", async () => {
+    await ensureAudioReady();
+    audio.playPoint("teacher");
+    setState({
+      teacherPoints: state.teacherPoints + 1,
+      fxEvent: makeFxEvent("teacher")
+    });
+  });
+
+  if (elements.correctButton) {
+    elements.correctButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playCorrect();
+      setState({ fxEvent: makeFxEvent("correct") });
+    });
+  }
+
+  if (elements.incorrectButton) {
+    elements.incorrectButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playIncorrect();
+      setState({ fxEvent: makeFxEvent("incorrect") });
+    });
+  }
+
+  if (elements.resetPointsButton) {
+    elements.resetPointsButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      audio.playNavigate();
+      setState({
+        studentPoints: 0,
+        teacherPoints: 0
+      });
+    });
+  }
+
+  if (elements.lessonResetButton) {
+    elements.lessonResetButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      clearPendingWorkReveal();
+      audio.stopRouletteSpin();
+      audio.playNavigate();
+      state = createFreshLessonState();
+      render();
+      bus.publishState(state);
+    });
+  }
+
+  if (elements.subPrevButton) {
+    elements.subPrevButton.addEventListener("click", goSubPrev);
+  }
+
+  if (elements.subNextButton) {
+    elements.subNextButton.addEventListener("click", goSubNext);
+  }
+
+  if (elements.rouletteStartButton) {
+    elements.rouletteStartButton.addEventListener("click", startWorkRoulette);
+  }
+
+  if (elements.rouletteStopButton) {
+    elements.rouletteStopButton.addEventListener("click", stopWorkRoulette);
+  }
+
+  elements.soundButton.addEventListener("click", async () => {
+    const wasReady = audioReady;
+    await ensureAudioReady();
+    if (!audioReady) {
+      return;
+    }
+    if (!wasReady) {
+      render();
+      return;
+    }
+    audio.playToggle();
+    setState({ bgmEnabled: !state.bgmEnabled });
+  });
+
+  elements.openBigButton.addEventListener("click", () => {
+    const url = buildBigScreenUrl();
+    window.open(url, "week9-bigscreen", "noopener,noreferrer");
+  });
+
+  if (elements.syncReconnectButton) {
+    elements.syncReconnectButton.addEventListener("click", async () => {
+      await ensureAudioReady();
+      if (audioReady) {
+        audio.playToggle();
+      }
+      mirrorLastSeenAt = 0;
+      bus.forceReconnect();
+      syncDiagnostics = bus.getDiagnostics();
+      updateMirrorChip();
+      updateSyncDiagnostics();
+    });
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      return;
+    }
+    render();
+  });
+
+  window.addEventListener("keydown", handleArrowKey, true);
+  if (!beatListenerBound) {
+    audio.onBeat((beat) => {
+      if (!audioReady) {
+        return;
+      }
+      const slide = currentSlide();
+      if (!slide || !isSlideMetronomeEnabled(slide)) {
+        return;
+      }
+      publishBeatSignal(beat.step16, beat.bpm, slide.id, {
+        at: beat.at
+      });
+    });
+    beatListenerBound = true;
+  }
+
+}
+
+function setupRealtimeSync() {
+  bus.onState((incoming) => {
+    if (!incoming || typeof incoming !== "object") {
+      return;
+    }
+    const normalizedIncoming = normalizeTimerState(incoming);
+    if ((normalizedIncoming.updatedAt || 0) <= (state.updatedAt || 0)) {
+      return;
+    }
+    state = normalizeTimerState({ ...state, ...normalizedIncoming });
+    render();
+  });
+
+  bus.onPresence((presence) => {
+    if (presence.role !== "bigscreen") {
+      return;
+    }
+    mirrorLastSeenAt = nowMs();
+    updateMirrorChip();
+    updateSyncDiagnostics();
+  });
+
+  bus.onSignal((signal) => {
+    if (!signal) {
+      return;
+    }
+  });
+
+  bus.onDiagnostics((next) => {
+    syncDiagnostics = next;
+    updateSyncDiagnostics();
+  });
+
+  window.setInterval(() => {
+    if (state.timerRunning && lessonElapsedSeconds() >= LESSON_DURATION_SECONDS) {
+      setState({
+        timerRunning: false,
+        timerOffsetSec: LESSON_DURATION_SECONDS,
+        timerStartedAt: null
+      });
+      return;
+    }
+    updateMirrorChip();
+    updateSyncDiagnostics();
+    updateTimer();
+    updateTimerButtons();
+  }, 500);
+}
+
+function bootstrap() {
+  buildFlowSteps();
+  buildGoals();
+  buildHintList();
+  initializePreviewFrame();
+  fitRunnerScale();
+  setupControls();
+  setupRealtimeSync();
+  window.addEventListener("resize", fitRunnerScale);
+
+  if (shouldResetOnLoad()) {
+    state = createFreshLessonState();
+  }
+
+  render();
+  bus.publishState(state);
+  updateSyncDiagnostics();
+}
+
+bootstrap();
+
+window.addEventListener("beforeunload", () => {
+  if (endRevealTimer) {
+    window.clearTimeout(endRevealTimer);
+    endRevealTimer = null;
+  }
+  clearPendingWorkReveal();
+  stopBeatSignal();
+  window.removeEventListener("resize", fitRunnerScale);
+  window.removeEventListener("keydown", handleArrowKey, true);
+  audio.destroy();
+  bus.close();
+});

@@ -52,7 +52,7 @@ function normalizeAppRelativePath(pathname) {
 function inferAppRootPathname(pathname) {
   const normalizedPathname =
     typeof pathname === "string" && pathname.startsWith("/") ? pathname : `/${String(pathname ?? "")}`;
-  const markers = ["/week1/", "/week5/", "/mockup/", "/assets/"];
+  const markers = ["/week1/", "/week5/", "/week9/", "/mockup/", "/assets/"];
   let markerIndex = -1;
 
   markers.forEach((marker) => {

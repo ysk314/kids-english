@@ -12,6 +12,8 @@ export class Week5AudioEngine {
     this.endRollAudio = null;
     this.endCymbalAudio = null;
     this.endFanfareTimer = null;
+    this.rouletteSpinTimer = null;
+    this.rouletteSpinStep = 0;
     this.enabled = false;
     this.bgmEnabled = true;
     this.bgmTimer = null;
@@ -175,6 +177,42 @@ export class Week5AudioEngine {
       return;
     }
     this.playTone(840, 0.06, 0.01, "square", 0.05);
+  }
+
+  playRouletteStart() {
+    if (!this.enabled) {
+      return;
+    }
+    this.playTone(520, 0.07, 0.008, "square", 0.12);
+    window.setTimeout(() => this.playTone(780, 0.09, 0.008, "triangle", 0.14), 55);
+  }
+
+  startRouletteSpin() {
+    if (!this.enabled) {
+      return;
+    }
+    this.stopRouletteSpin();
+    this.rouletteSpinStep = 0;
+    this.rouletteSpinTimer = window.setInterval(() => {
+      const freq = this.rouletteSpinStep % 2 === 0 ? 920 : 1120;
+      this.playTone(freq, 0.055, 0.006, "square", 0.095);
+      this.rouletteSpinStep += 1;
+    }, 110);
+  }
+
+  playRouletteStop() {
+    if (!this.enabled) {
+      return;
+    }
+    this.playTone(980, 0.05, 0.006, "triangle", 0.13);
+    window.setTimeout(() => this.playTone(640, 0.1, 0.008, "square", 0.12), 45);
+  }
+
+  stopRouletteSpin() {
+    if (this.rouletteSpinTimer) {
+      window.clearInterval(this.rouletteSpinTimer);
+      this.rouletteSpinTimer = null;
+    }
   }
 
   playEndFanfare() {
@@ -427,6 +465,7 @@ export class Week5AudioEngine {
   destroy() {
     this.stopBgm();
     this.stopMetronome({ resumeBgm: false });
+    this.stopRouletteSpin();
     if (this.endFanfareTimer) {
       window.clearTimeout(this.endFanfareTimer);
       this.endFanfareTimer = null;

@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>授業ランナー（第5週）</title>
-    <script type="module" crossorigin src="../assets/runner-DZ1z725X.js"></script>
-    <link rel="modulepreload" crossorigin href="../assets/sessionBus-CHWj0f0z.js">
-    <link rel="modulepreload" crossorigin href="../assets/lessonData-BI3ykky_.js">
-    <link rel="modulepreload" crossorigin href="../assets/audioEngine-DLS7xOGj.js">
-    <link rel="stylesheet" crossorigin href="../assets/sessionBus-6KCAmc9p.css">
+    <script type="module" crossorigin src="../assets/runner-B1UHP8VL.js"></script>
+    <link rel="modulepreload" crossorigin href="../assets/sessionBus-BwRge9Ne.js">
+    <link rel="modulepreload" crossorigin href="../assets/lessonData-BMXS5tCL.js">
+    <link rel="modulepreload" crossorigin href="../assets/audioEngine-uRlmdRsO.js">
+    <link rel="stylesheet" crossorigin href="../assets/sessionBus-D1IxQHln.css">
   </head>
   <body class="week5-runner-page">
     <div class="runner-scale" data-role="runner-scale">
@@ -22,6 +22,10 @@
           </div>
         </div>
         <div class="actions">
+          <span class="chip chip-sync-status">
+            <strong data-testid="sync-status-line">同期: 初期化中</strong>
+            <small data-testid="sync-status-sub">接続診断を読み込み中</small>
+          </span>
           <span class="chip">Slide: <strong data-testid="slide-counter">1 / 43</strong></span>
           <span data-role="mirror-chip" class="chip">Mirror Waiting</span>
           <span class="chip">Class: ひまわり組</span>
@@ -74,6 +78,9 @@
                   <button type="button" class="btn btn-open" data-testid="open-bigscreen-btn">大画面をひらく</button>
                   <button type="button" class="btn btn-sound" data-testid="sound-btn">サウンド開始</button>
                   <button type="button" class="btn btn-reset" data-testid="lesson-reset-btn">授業リセット</button>
+                </div>
+                <div class="sync-diagnostics">
+                  <button type="button" class="btn btn-sync-reconnect" data-testid="sync-reconnect-btn">同期を再接続</button>
                 </div>
               </section>
 

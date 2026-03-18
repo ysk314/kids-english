@@ -13,6 +13,8 @@ export default defineConfig(() => ({
         index: resolve(__dirname, "index.html"),
         week1Runner: resolve(__dirname, "week1/runner.html"),
         week1Bigscreen: resolve(__dirname, "week1/big-screen.html"),
+        week9Runner: resolve(__dirname, "week9/runner.html"),
+        week9Bigscreen: resolve(__dirname, "week9/big-screen.html"),
         runner: resolve(__dirname, "week5/runner.html"),
         bigscreen: resolve(__dirname, "week5/big-screen.html")
       }
