@@ -365,44 +365,6 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         width: 100%;
         height: clamp(340px, 54vh, 560px);
       }
-      .week9-work-actions {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 16px;
-        align-items: end;
-      }
-      .week9-work-action-row {
-        display: flex;
-        gap: 14px;
-      }
-      .week9-work-btn {
-        min-width: 160px;
-        border: none;
-        border-radius: 999px;
-        padding: 16px 28px;
-        font-family: "Yusei Magic", sans-serif;
-        font-size: clamp(24px, 2.8vw, 34px);
-        font-weight: 800;
-        color: #ffffff;
-        box-shadow: 0 10px 22px rgba(71, 18, 45, 0.18);
-        pointer-events: none;
-      }
-      .week9-work-btn-start {
-        background: linear-gradient(135deg, #24b16f, #4fd884);
-      }
-      .week9-work-btn-stop {
-        background: linear-gradient(135deg, #e95555, #ff8b62);
-      }
-      .week9-work-btn-reset {
-        background: linear-gradient(135deg, #4b6cff, #7aa8ff);
-      }
-      .week9-work-btn.is-disabled {
-        opacity: 0.4;
-        filter: saturate(0.7);
-      }
-      .week9-work-btn.is-hidden {
-        visibility: hidden;
-      }
       @media (max-width: 980px) {
         .week9-theme-grid,
         .week9-work-slots,
@@ -417,12 +379,6 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         }
         .week9-rhythm-copy .sentence,
         .week9-result-copy .sentence {
-          justify-content: center;
-        }
-        .week9-work-actions {
-          grid-template-columns: 1fr;
-        }
-        .week9-work-action-row {
           justify-content: center;
         }
       }
@@ -537,7 +493,7 @@ function renderWork(lang) {
 
   const body = `
     <div class="week9-work-board">
-      <div class="week9-status" data-role="work-status">${lang === "jp" ? "ボタンで ルーレット スタート" : "Press to start the roulette"}</div>
+      <div class="week9-status" data-role="work-status">${lang === "jp" ? "しゅごを えらぼう！" : "Choose the subject."}</div>
       <div class="week9-work-slots">
         <section class="week9-slot" data-role="subject-slot-shell">
           <div class="week9-slot-label">${subjectLabel}</div>
@@ -547,13 +503,6 @@ function renderWork(lang) {
           <div class="week9-slot-label">${predicateLabel}</div>
           <div class="week9-slot-value" data-role="work-predicate-slot">${placeholder}</div>
         </section>
-      </div>
-      <div class="week9-work-actions">
-        <div class="week9-work-action-row">
-          <button type="button" class="week9-work-btn week9-work-btn-start" data-role="work-screen-start">start</button>
-          <button type="button" class="week9-work-btn week9-work-btn-stop is-disabled" data-role="work-screen-stop">stop</button>
-        </div>
-        <button type="button" class="week9-work-btn week9-work-btn-reset is-hidden" data-role="work-screen-reset">reset</button>
       </div>
       <section class="week9-result-card is-hidden" data-role="work-result-card">
         <div class="week9-result-image">

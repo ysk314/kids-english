@@ -343,9 +343,9 @@ export function getWorkDisplayState(interaction = {}, lang = "jp", now = Date.no
     status:
       lang === "jp"
         ? phase === WORK_PHASES.IDLE && subject && !predicate
-          ? "つぎは じゅつご ルーレット！"
+          ? "つぎは じゅつごを えらぼう！"
           : phase === WORK_PHASES.IDLE
-          ? "ボタンで ルーレット スタート"
+          ? "しゅごを えらぼう！"
           : phase === WORK_PHASES.SUBJECT_SPINNING
             ? "しゅご ルーレット まわってる！"
             : phase === WORK_PHASES.PREDICATE_SPINNING
@@ -354,9 +354,9 @@ export function getWorkDisplayState(interaction = {}, lang = "jp", now = Date.no
                 ? "けっか はっぴょう！"
                 : "できた！ ぶんを よんでみよう"
         : phase === WORK_PHASES.IDLE && subject && !predicate
-          ? "Next, start the predicate roulette."
+          ? "Next, choose the predicate."
           : phase === WORK_PHASES.IDLE
-          ? "Press to start the roulette"
+          ? "Choose the subject."
           : phase === WORK_PHASES.SUBJECT_SPINNING
             ? "Subject roulette is spinning"
             : phase === WORK_PHASES.PREDICATE_SPINNING
