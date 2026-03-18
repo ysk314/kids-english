@@ -132,8 +132,6 @@ const elements = {
   syncStatusLine: document.querySelector("[data-testid='sync-status-line']"),
   syncStatusSub: document.querySelector("[data-testid='sync-status-sub']"),
   syncReconnectButton: document.querySelector("[data-testid='sync-reconnect-btn']"),
-  rouletteStartButton: document.querySelector("[data-testid='roulette-start-btn']"),
-  rouletteStopButton: document.querySelector("[data-testid='roulette-stop-btn']"),
   subPrevButton: document.querySelector("[data-testid='sub-prev-btn']"),
   subNextButton: document.querySelector("[data-testid='sub-next-btn']")
 };
@@ -351,49 +349,40 @@ function updateSlideActionButtons(slide) {
   const maxStep = getSubStepMax(slide);
   const hasSubStep = maxStep > 0;
   const currentStep = Number(getSlideInteraction(slide.id).subStep ?? inferDefaultSubStep(slide));
-  if (elements.rouletteStartButton && elements.rouletteStopButton) {
-    const isWorkSlide = slide.kind === "work";
-    elements.rouletteStartButton.disabled = !isWorkSlide;
-    elements.rouletteStopButton.disabled = !isWorkSlide;
-    if (!isWorkSlide) {
-      elements.rouletteStartButton.textContent = "ルーレット開始";
-      elements.rouletteStopButton.textContent = "ルーレット停止";
-    } else if (
-      currentStep === WORK_PHASES.IDLE &&
-      !Number.isFinite(getSlideInteraction(slide.id).subjectIndex)
-    ) {
-      elements.rouletteStartButton.textContent = "主語スタート";
-      elements.rouletteStopButton.textContent = "停止待ち";
-      elements.rouletteStopButton.disabled = true;
-    } else if (currentStep === WORK_PHASES.IDLE) {
-      elements.rouletteStartButton.textContent = "述語スタート";
-      elements.rouletteStopButton.textContent = "停止待ち";
-      elements.rouletteStopButton.disabled = true;
-    } else if (currentStep === WORK_PHASES.SUBJECT_SPINNING) {
-      elements.rouletteStartButton.textContent = "主語回転中";
-      elements.rouletteStartButton.disabled = true;
-      elements.rouletteStopButton.textContent = "主語ストップ";
-    } else if (currentStep === WORK_PHASES.PREDICATE_SPINNING) {
-      elements.rouletteStartButton.textContent = "述語回転中";
-      elements.rouletteStartButton.disabled = true;
-      elements.rouletteStopButton.textContent = "述語ストップ";
-    } else if (currentStep === WORK_PHASES.REVEALING) {
-      elements.rouletteStartButton.textContent = "発表中";
-      elements.rouletteStartButton.disabled = true;
-      elements.rouletteStopButton.textContent = "発表中";
-      elements.rouletteStopButton.disabled = true;
-    } else {
-      elements.rouletteStartButton.textContent = "もう1回";
-      elements.rouletteStopButton.textContent = "停止待ち";
-      elements.rouletteStopButton.disabled = true;
-    }
-  }
   if (elements.subPrevButton && elements.subNextButton) {
     if (slide.kind === "work") {
-      elements.subPrevButton.disabled = true;
-      elements.subNextButton.disabled = true;
-      elements.subPrevButton.textContent = "◀ スライド内";
-      elements.subNextButton.textContent = "スライド内 ▶";
+      const hasSubject = Number.isFinite(getSlideInteraction(slide.id).subjectIndex);
+      if (currentStep === WORK_PHASES.REVEALING) {
+        elements.subPrevButton.disabled = true;
+        elements.subNextButton.disabled = true;
+        elements.subPrevButton.textContent = "はっぴょう中";
+        elements.subNextButton.textContent = "はっぴょう中";
+      } else if (currentStep === WORK_PHASES.SUBJECT_SPINNING) {
+        elements.subPrevButton.disabled = true;
+        elements.subNextButton.disabled = false;
+        elements.subPrevButton.textContent = "リセット";
+        elements.subNextButton.textContent = "しゅごを とめる ▶";
+      } else if (currentStep === WORK_PHASES.PREDICATE_SPINNING) {
+        elements.subPrevButton.disabled = true;
+        elements.subNextButton.disabled = false;
+        elements.subPrevButton.textContent = "リセット";
+        elements.subNextButton.textContent = "じゅつごを とめる ▶";
+      } else if (currentStep === WORK_PHASES.REVEALED) {
+        elements.subPrevButton.disabled = false;
+        elements.subNextButton.disabled = false;
+        elements.subPrevButton.textContent = "リセット";
+        elements.subNextButton.textContent = "もう1かい ▶";
+      } else if (hasSubject) {
+        elements.subPrevButton.disabled = false;
+        elements.subNextButton.disabled = false;
+        elements.subPrevButton.textContent = "リセット";
+        elements.subNextButton.textContent = "じゅつごを まわす ▶";
+      } else {
+        elements.subPrevButton.disabled = false;
+        elements.subNextButton.disabled = false;
+        elements.subPrevButton.textContent = "◀ まえへ";
+        elements.subNextButton.textContent = "しゅごを まわす ▶";
+      }
       return;
     }
     elements.subPrevButton.disabled = !hasSubStep && state.slideIndex <= 0;
@@ -1139,14 +1128,6 @@ async function setupControls() {
 
   if (elements.subNextButton) {
     elements.subNextButton.addEventListener("click", goSubNext);
-  }
-
-  if (elements.rouletteStartButton) {
-    elements.rouletteStartButton.addEventListener("click", startWorkRoulette);
-  }
-
-  if (elements.rouletteStopButton) {
-    elements.rouletteStopButton.addEventListener("click", stopWorkRoulette);
   }
 
   elements.soundButton.addEventListener("click", async () => {
