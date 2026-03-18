@@ -64,6 +64,16 @@
         line-height: 1.3;
         text-align: center;
       }
+      .week9-sentence-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.24em;
+        align-items: center;
+      }
+      .week9-sentence-token {
+        display: inline-block;
+        white-space: nowrap;
+      }
       .week9-theme-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -140,7 +150,7 @@
       .week9-rhythm-copy .sentence {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
-        text-align: left;
+        justify-content: flex-start;
       }
       .week9-work-slots {
         display: grid;
@@ -220,11 +230,49 @@
       .week9-result-copy .sentence {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
-        text-align: left;
+        justify-content: flex-start;
       }
       .week9-result-image .week9-img-shell {
         width: 100%;
         height: clamp(340px, 54vh, 560px);
+      }
+      .week9-work-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: end;
+      }
+      .week9-work-action-row {
+        display: flex;
+        gap: 14px;
+      }
+      .week9-work-btn {
+        min-width: 160px;
+        border: none;
+        border-radius: 999px;
+        padding: 16px 28px;
+        font-family: "Yusei Magic", sans-serif;
+        font-size: clamp(24px, 2.8vw, 34px);
+        font-weight: 800;
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(71, 18, 45, 0.18);
+        pointer-events: none;
+      }
+      .week9-work-btn-start {
+        background: linear-gradient(135deg, #24b16f, #4fd884);
+      }
+      .week9-work-btn-stop {
+        background: linear-gradient(135deg, #e95555, #ff8b62);
+      }
+      .week9-work-btn-reset {
+        background: linear-gradient(135deg, #4b6cff, #7aa8ff);
+      }
+      .week9-work-btn.is-disabled {
+        opacity: 0.4;
+        filter: saturate(0.7);
+      }
+      .week9-work-btn.is-hidden {
+        visibility: hidden;
       }
       @media (max-width: 980px) {
         .week9-theme-grid,
@@ -238,11 +286,15 @@
         .week9-result-card {
           grid-template-columns: 1fr;
         }
-        .week9-rhythm-copy .sentence {
-          text-align: center;
-        }
+        .week9-rhythm-copy .sentence,
         .week9-result-copy .sentence {
-          text-align: center;
+          justify-content: center;
+        }
+        .week9-work-actions {
+          grid-template-columns: 1fr;
+        }
+        .week9-work-action-row {
+          justify-content: center;
         }
       }
     </style>
@@ -262,7 +314,7 @@
   
       </section>
       <section class="week9-rhythm-copy">
-        <div class="sentence">Mutsumi is an English teacher.</div>
+        <div class="sentence week9-sentence-line"><span class="week9-sentence-token">Mutsumi</span><span class="week9-sentence-token">is</span><span class="week9-sentence-token">an</span><span class="week9-sentence-token">English</span><span class="week9-sentence-token">teacher.</span></div>
       </section>
     </div>
   </section>

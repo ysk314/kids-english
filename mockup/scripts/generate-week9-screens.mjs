@@ -104,6 +104,16 @@ function fallbackImage(img, label, { className = "", scale = 1, offsetY = "0%" }
   `;
 }
 
+function renderSentenceMarkup(sentence) {
+  const tokens = String(sentence)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => `<span class="week9-sentence-token">${token}</span>`)
+    .join("");
+  return `<div class="sentence week9-sentence-line">${tokens}</div>`;
+}
+
 function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
   return `<!doctype html>
 <html lang="ja">
@@ -170,6 +180,16 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         font-weight: 800;
         line-height: 1.3;
         text-align: center;
+      }
+      .week9-sentence-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.24em;
+        align-items: center;
+      }
+      .week9-sentence-token {
+        display: inline-block;
+        white-space: nowrap;
       }
       .week9-theme-grid {
         display: grid;
@@ -247,7 +267,7 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
       .week9-rhythm-copy .sentence {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
-        text-align: left;
+        justify-content: flex-start;
       }
       .week9-work-slots {
         display: grid;
@@ -327,11 +347,49 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
       .week9-result-copy .sentence {
         font-size: clamp(42px, 5.4vw, 74px);
         line-height: 1.22;
-        text-align: left;
+        justify-content: flex-start;
       }
       .week9-result-image .week9-img-shell {
         width: 100%;
         height: clamp(340px, 54vh, 560px);
+      }
+      .week9-work-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: end;
+      }
+      .week9-work-action-row {
+        display: flex;
+        gap: 14px;
+      }
+      .week9-work-btn {
+        min-width: 160px;
+        border: none;
+        border-radius: 999px;
+        padding: 16px 28px;
+        font-family: "Yusei Magic", sans-serif;
+        font-size: clamp(24px, 2.8vw, 34px);
+        font-weight: 800;
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(71, 18, 45, 0.18);
+        pointer-events: none;
+      }
+      .week9-work-btn-start {
+        background: linear-gradient(135deg, #24b16f, #4fd884);
+      }
+      .week9-work-btn-stop {
+        background: linear-gradient(135deg, #e95555, #ff8b62);
+      }
+      .week9-work-btn-reset {
+        background: linear-gradient(135deg, #4b6cff, #7aa8ff);
+      }
+      .week9-work-btn.is-disabled {
+        opacity: 0.4;
+        filter: saturate(0.7);
+      }
+      .week9-work-btn.is-hidden {
+        visibility: hidden;
       }
       @media (max-width: 980px) {
         .week9-theme-grid,
@@ -345,11 +403,15 @@ function pageShell({ title, heading, body, mode = "jp", bodyClass = "" }) {
         .week9-result-card {
           grid-template-columns: 1fr;
         }
-        .week9-rhythm-copy .sentence {
-          text-align: center;
-        }
+        .week9-rhythm-copy .sentence,
         .week9-result-copy .sentence {
-          text-align: center;
+          justify-content: center;
+        }
+        .week9-work-actions {
+          grid-template-columns: 1fr;
+        }
+        .week9-work-action-row {
+          justify-content: center;
         }
       }
     </style>
@@ -427,7 +489,7 @@ function renderRhythm(index, lang) {
         })}
       </section>
       <section class="week9-rhythm-copy">
-        <div class="sentence">${sentence}</div>
+        ${renderSentenceMarkup(sentence)}
       </section>
     </div>
   `;
@@ -474,6 +536,13 @@ function renderWork(lang) {
           <div class="week9-slot-value" data-role="work-predicate-slot">${placeholder}</div>
         </section>
       </div>
+      <div class="week9-work-actions">
+        <div class="week9-work-action-row">
+          <button type="button" class="week9-work-btn week9-work-btn-start" data-role="work-screen-start">start</button>
+          <button type="button" class="week9-work-btn week9-work-btn-stop is-disabled" data-role="work-screen-stop">stop</button>
+        </div>
+        <button type="button" class="week9-work-btn week9-work-btn-reset is-hidden" data-role="work-screen-reset">reset</button>
+      </div>
       <section class="week9-result-card is-hidden" data-role="work-result-card">
         <div class="week9-result-image">
           <div class="week9-img-shell" data-role="work-image-shell">
@@ -482,7 +551,7 @@ function renderWork(lang) {
           </div>
         </div>
         <div class="week9-result-copy">
-          <div class="sentence" data-role="work-sentence"></div>
+          <div class="sentence week9-sentence-line" data-role="work-sentence"></div>
         </div>
       </section>
     </div>

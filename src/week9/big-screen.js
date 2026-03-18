@@ -48,6 +48,15 @@ const POINT_FX_DURATION_MS = 1900;
 const END_ROLL_START_DELAY_MS = 3000;
 const END_CYMBAL_DELAY_MS = 1300;
 
+function renderSentenceMarkup(sentence) {
+  return String(sentence)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => `<span class="week9-sentence-token">${token}</span>`)
+    .join("");
+}
+
 function currentSlide() {
   const index = Math.min(WEEK9_SLIDES.length - 1, Math.max(0, state.slideIndex || 0));
   return WEEK9_SLIDES[index] || WEEK9_SLIDES[0];
@@ -481,6 +490,9 @@ function renderWorkRoulette(doc, slide) {
   const image = doc.querySelector("[data-role='work-image']");
   const imageShell = doc.querySelector("[data-role='work-image-shell']");
   const imageFallback = doc.querySelector("[data-role='work-image-fallback']");
+  const screenStartButton = doc.querySelector("[data-role='work-screen-start']");
+  const screenStopButton = doc.querySelector("[data-role='work-screen-stop']");
+  const screenResetButton = doc.querySelector("[data-role='work-screen-reset']");
 
   if (subjectSlot) {
     subjectSlot.textContent = display.subject ? (slide.phase === "jp" ? display.subject.jp : display.subject.en) : "?";
@@ -502,7 +514,7 @@ function renderWorkRoulette(doc, slide) {
     status.textContent = display.status;
   }
   if (sentence) {
-    sentence.textContent = display.phase === WORK_PHASES.REVEALED ? display.sentence : "";
+    sentence.innerHTML = display.phase === WORK_PHASES.REVEALED ? renderSentenceMarkup(display.sentence) : "";
   }
   if (resultCard) {
     resultCard.classList.toggle("is-hidden", display.phase !== WORK_PHASES.REVEALED);
@@ -528,6 +540,23 @@ function renderWorkRoulette(doc, slide) {
       image.removeAttribute("src");
       image.setAttribute("alt", "");
     }
+  }
+  if (screenStartButton) {
+    screenStartButton.classList.toggle(
+      "is-disabled",
+      display.phase === WORK_PHASES.SUBJECT_SPINNING || display.phase === WORK_PHASES.PREDICATE_SPINNING
+    );
+  }
+  if (screenStopButton) {
+    screenStopButton.classList.toggle(
+      "is-disabled",
+      !(display.phase === WORK_PHASES.SUBJECT_SPINNING || display.phase === WORK_PHASES.PREDICATE_SPINNING)
+    );
+  }
+  if (screenResetButton) {
+    const showReset = display.subjectIndex !== null && display.phase !== WORK_PHASES.REVEALING;
+    screenResetButton.classList.toggle("is-hidden", !showReset);
+    screenResetButton.classList.toggle("is-disabled", !showReset);
   }
 }
 
