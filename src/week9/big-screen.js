@@ -42,6 +42,7 @@ let lastFxId = "";
 let lastEndRevealAt = null;
 let syncDiagnostics = bus.getDiagnostics();
 let workAnimationTimer = null;
+let runnerLastSeenAt = 0;
 
 const POINT_FX_DURATION_MS = 1900;
 const END_ROLL_START_DELAY_MS = 3000;
@@ -91,6 +92,8 @@ function labelPeerState(peerState) {
   switch (peerState) {
     case "open":
       return "OK";
+    case "local":
+      return "LOCAL";
     case "loading":
       return "LOAD";
     case "restarting":
@@ -130,14 +133,18 @@ function labelRemoteState(remoteState) {
 
 function updateSyncDiagnostics() {
   const diagnostics = syncDiagnostics || bus.getDiagnostics();
-  const remoteConnected = diagnostics.remoteState === "connected";
+  const localRunnerConnected = Date.now() - runnerLastSeenAt < 4_500;
+  const displayRemoteState = localRunnerConnected ? "connected" : diagnostics.remoteState;
+  const displayPeerState =
+    localRunnerConnected && diagnostics.peerState !== "open" ? "local" : diagnostics.peerState;
+  const remoteConnected = displayRemoteState === "connected";
   if (mirrorStatus) {
     mirrorStatus.textContent = remoteConnected ? "Mirror Connected" : "Mirror Waiting";
     mirrorStatus.classList.toggle("hot", remoteConnected);
   }
   if (syncChip) {
-    const remoteLabel = labelRemoteState(diagnostics.remoteState);
-    const peerLabel = labelPeerState(diagnostics.peerState);
+    const remoteLabel = labelRemoteState(displayRemoteState);
+    const peerLabel = labelPeerState(displayPeerState);
     const up = formatElapsedFrom(diagnostics.lastOutboundAt);
     const down = formatElapsedFrom(diagnostics.lastInboundAt);
     const suffix = diagnostics.lastError ? ` err:${diagnostics.lastError}` : "";
@@ -552,6 +559,14 @@ function applySlideInteraction() {
 
 bus.onState((incoming) => {
   applyState(incoming);
+});
+
+bus.onPresence((presence) => {
+  if (presence.role !== "runner") {
+    return;
+  }
+  runnerLastSeenAt = Date.now();
+  updateSyncDiagnostics();
 });
 
 bus.onDiagnostics((next) => {

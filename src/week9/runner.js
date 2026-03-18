@@ -432,6 +432,8 @@ function labelPeerState(peerState) {
   switch (peerState) {
     case "open":
       return "OK";
+    case "local":
+      return "LOCAL";
     case "loading":
       return "読み込み中";
     case "restarting":
@@ -476,8 +478,10 @@ function updateSyncDiagnostics() {
   const diagnostics = syncDiagnostics || bus.getDiagnostics();
   const mirrorConnected = nowMs() - mirrorLastSeenAt < 4_500;
   const displayRemoteState = mirrorConnected ? "connected" : diagnostics.remoteState;
+  const displayPeerState =
+    mirrorConnected && diagnostics.peerState !== "open" ? "local" : diagnostics.peerState;
   const remoteText = labelRemoteState(displayRemoteState);
-  const peerText = labelPeerState(diagnostics.peerState);
+  const peerText = labelPeerState(displayPeerState);
   elements.syncStatusLine.textContent = `同期: ${remoteText} / Peer: ${peerText}`;
   elements.syncStatusLine.classList.toggle("ok", displayRemoteState === "connected");
   elements.syncStatusLine.classList.toggle("warn", displayRemoteState !== "connected");
@@ -1269,7 +1273,12 @@ function bootstrap() {
 
   render();
   bus.publishState(state);
+  bus.publishPresence("runner");
   updateSyncDiagnostics();
+
+  window.setInterval(() => {
+    bus.publishPresence("runner");
+  }, 1_500);
 }
 
 bootstrap();
